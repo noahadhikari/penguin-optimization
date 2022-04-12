@@ -1,0 +1,14 @@
+# Large instance.
+# Number of cities, 195 <= N <= 205
+202
+# Grid size, 100
+100
+# Rs, 3
+3
+# Rp, 14
+14
+# Coordinates for cities.
+1 2
+23 5
+34 20
+...
