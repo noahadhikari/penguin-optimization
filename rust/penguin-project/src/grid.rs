@@ -4,13 +4,13 @@ use std::collections::HashMap;
 // A Grid which we place towers and cities on.
 #[derive(Debug)]
 pub struct Grid {
-    dimension: usize,
-    service_radius: usize,
-    penalty_radius: usize,
+    dimension: u8,
+    service_radius: u8,
+    penalty_radius: u8,
 
     // Mapping from <coordinates of towers, w_j := number of other towers within penalty radius>.
     // i.e. <(2, 3), 6>
-    towers: HashMap<Point, usize>,
+    towers: HashMap<Point, u8>,
 
     // Mapping from <coordinates of cities, towers that cover it>.
     // i.e. <(4, 4), {(1, 2), (3, 4)} >
@@ -19,7 +19,7 @@ pub struct Grid {
 
 impl Grid {
     /// Creates and returns a new Grid of the given dimension, service_radius, and penalty radius.
-    pub fn new(dimension: usize, service_radius: usize, penalty_radius: usize) -> Grid {
+    pub fn new(dimension: u8, service_radius: u8, penalty_radius: u8) -> Grid {
         Grid {
             dimension,
             service_radius,
@@ -67,7 +67,7 @@ impl Grid {
 
         for (&t, w_j) in self.towers.iter_mut() {
             if penalized.contains(&t) && t != p {
-                self.towers.insert(t, w_j + 1);
+                self.towers.insert(t, *w_j + 1);
             }
         } 
     }
@@ -97,7 +97,7 @@ impl Grid {
     }
 
     /// Returns a vector of all the grid points within the given radius of the given point.
-    fn points_within_radius(&self, p: Point, r: usize) -> HashSet<Point> {
+    fn points_within_radius(&self, p: Point, r: u8) -> HashSet<Point> {
         let mut result = HashSet::new();
         let r = r as isize;
         for i in -r..r {
@@ -118,6 +118,19 @@ impl Grid {
         }
         (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
     }
+
+    pub fn set_service_radius(&mut self, serv_radius: u8) {
+        self.service_radius = serv_radius;
+    }
+
+    pub fn set_penalty_radius(&mut self, pen_radius: u8) {
+        self.penalty_radius = pen_radius;
+    }
+
+    pub fn set_dimension(&mut self, dim: u8) {
+        self.dimension = dim;
+    }
+
 }
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
