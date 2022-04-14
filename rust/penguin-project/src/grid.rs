@@ -78,8 +78,20 @@ impl Grid {
         self.towers.remove(&Point::new(x, y));
     }
 
+    pub fn set_service_radius(&mut self, serv_radius: u8) {
+        self.service_radius = serv_radius;
+    }
+
+    pub fn set_penalty_radius(&mut self, pen_radius: u8) {
+        self.penalty_radius = pen_radius;
+    }
+
+    pub fn set_dimension(&mut self, dim: usize) {
+        self.dimension = dim;
+    }
+
     fn check_coordinates(x: usize, y: usize, dimension: usize) {
-        assert!(x < dimension && y < dimension, 
+        assert!(x < dimension && y < dimension,
             "Coordinates off the edge of grid: ({}, {}) for grid dimension {}", x, y, dimension);
     }
 }
@@ -106,5 +118,4 @@ impl Point {
     fn dist_to(&self, p: &Point) -> f64 {
         Point::dist(self, p)
     }
-
 }
