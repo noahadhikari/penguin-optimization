@@ -1,43 +1,38 @@
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 // A Grid which we place towers and cities on.
 #[derive(Debug)]
 pub struct Grid {
     dimension: usize,
-    service_radius: u8,
-    penalty_radius: u8,
+    service_radius: usize,
+    penalty_radius: usize,
 
-    // The coordinates of towers.
-    towers: HashSet<Point>,
+    // Mapping from <coordinates of towers, w_j := number of other towers within penalty radius>.
+    // i.e. <(2, 3), 6>
+    towers: HashMap<Point, usize>,
 
-    // The coordinates of cities.
-    cities: HashSet<Point>,
+    // Mapping from <coordinates of cities, towers that cover it>.
+    // i.e. <(4, 4), {(1, 2), (3, 4)} >
+    cities: HashMap<Point, HashSet<Point>>,
 }
 
 impl Grid {
     /// Creates and returns a new Grid of the given dimension, service_radius, and penalty radius.
-    pub fn new(dimension: usize, service_radius: u8, penalty_radius: u8) -> Grid {
+    pub fn new(dimension: usize, service_radius: usize, penalty_radius: usize) -> Grid {
         Grid {
             dimension,
             service_radius,
             penalty_radius,
-            towers: HashSet::new(),
-            cities: HashSet::new(),
+            towers: HashMap::new(),
+            cities: HashMap::new(),
         }
     }
 
     /// Returns the total penalty P of this Grid.
     pub fn total_penalty(&self) -> f64 {
         let mut total_penalty = 0.0;
-        for tower1 in self.towers.iter() {
-            let mut w_j = 0;
-            for tower2 in self.towers.iter() {
-                if tower1 != tower2 {
-                    if tower1.dist_to(tower2) <= self.penalty_radius as f64 {
-                        w_j += 1;
-                    }
-                }
-            }
+        for &w_j in self.towers.values() {
             total_penalty += (0.17 * w_j as f64).exp();
         }
         170.0 * total_penalty
@@ -45,55 +40,96 @@ impl Grid {
 
     /// Returns whether the towers in this Grid cover all cities.
     pub fn is_valid(&self) -> bool {
-        for city in self.cities.iter() {
-            let mut covered = false;
-            for tower in self.towers.iter() {
-                if city.dist_to(tower) <= self.service_radius as f64 {
-                    covered = true;
-                    break;
-                }
-            }
-            if !covered {
-                return false;
-            }
-        }
-        true
+        self.cities.values().all(|c| c.len() > 0)
     }
 
     /// Adds a city at (x, y) to this Grid, if it does not already exist.
-    pub fn add_city(&mut self, x: usize, y: usize) {
-        Self::check_coordinates(x, y, self.dimension);
-        self.cities.insert(Point::new(x, y));
+    /// Can only add cities if no towers have been placed yet.
+    pub fn add_city(&mut self, x: isize, y: isize) {
+        assert!(self.towers.len() == 0, "Cannot add cities after placing towers.");
+        self.check_coordinates(x, y);
+        self.cities.insert(Point::new(x, y), HashSet::new());
     }
 
     /// Adds a tower at (x, y) to this Grid, if it does not already exist.
-    pub fn add_tower(&mut self, x: usize, y: usize) {
-        Self::check_coordinates(x, y, self.dimension);
-        self.towers.insert(Point::new(x, y));
+    pub fn add_tower(&mut self, x: isize, y: isize) {
+        self.check_coordinates(x, y);
+        let p: Point = Point::new(x, y);
+        self.towers.insert(p, 0);
+        self.update_towers(p);
+        self.update_cities(p);
     }
 
+    /// Used upon adding a tower P.
+    /// Updates the w_j value for each tower within the penalty radius of P.
+    fn update_towers(&mut self, p: Point) {
+        let penalized = self.points_within_radius(p, self.penalty_radius);
+
+        for (&t, w_j) in self.towers.iter_mut() {
+            if penalized.contains(&t) && t != p {
+                self.towers.insert(t, w_j + 1);
+            }
+        } 
+    }
+
+    /// Used upon adding a tower P.
+    /// Adds P to the covering towers for each city within the service radius of P.
+    fn update_cities(&mut self, p: Point) {
+        let coverage = self.points_within_radius(p, self.service_radius);
+
+        for (c, ts) in self.cities.iter_mut() {
+            if coverage.contains(&c) && !ts.contains(&p) {
+                ts.insert(p);
+            }
+        } 
+    }
+        
     /// Removes the tower at (x, y) from this Grid, if it exists.
-    pub fn remove_tower(&mut self, x: usize, y: usize) {
-        Self::check_coordinates(x, y, self.dimension);
+    pub fn remove_tower(&mut self, x: isize, y: isize) {
+        self.check_coordinates(x, y);
         self.towers.remove(&Point::new(x, y));
     }
 
-    fn check_coordinates(x: usize, y: usize, dimension: usize) {
-        assert!(x < dimension && y < dimension, 
-            "Coordinates off the edge of grid: ({}, {}) for grid dimension {}", x, y, dimension);
+    /// Asserts that the given coordinates are within this Grid.
+    fn check_coordinates(&self, x: isize, y: isize) {
+        assert!(x >= 0 && y >= 0 && x < self.dimension as isize && y < self.dimension as isize, 
+            "Coordinates off the edge of grid: ({}, {}) for grid dimension {}", x, y, self.dimension);
+    }
+
+    /// Returns a vector of all the grid points within the given radius of the given point.
+    fn points_within_radius(&self, p: Point, r: usize) -> HashSet<Point> {
+        let mut result = HashSet::new();
+        let r = r as isize;
+        for i in -r..r {
+            for j in -r..r {
+                if self.within(r, p.x, p.y, p.x + i, p.y + j) {
+                    result.insert(Point::new(i as isize, j as isize));
+                }
+            }
+        }
+
+        result
+    }
+
+    /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
+    fn within(&self, r: isize, x1: isize, y1: isize, x2: isize, y2: isize) -> bool {
+        if (x2 < 0 || x2 > self.dimension as isize) || (y2 < 0 || y2 > self.dimension as isize) {
+            return false;
+        }
+        (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
     }
 }
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 struct Point {
-    x: usize,
-    y: usize,
+    x: isize,
+    y: isize,
 }
 
 impl Point {
     /// Creates and returns a new Point with the given x and y coordinates.
-    fn new(x: usize, y: usize) -> Point {
+    fn new(x: isize, y: isize) -> Point {
         Point { x, y }
     }
 
@@ -105,6 +141,6 @@ impl Point {
     /// Returns the Euclidean distance between this point and the given point.
     fn dist_to(&self, p: &Point) -> f64 {
         Point::dist(self, p)
-    }
+    }   
 
 }
