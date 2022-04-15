@@ -56,8 +56,9 @@ impl fmt::Display for Grid {
                 } else if self.cities.contains_key(&point) {
                     write!(f, "c")?;
                 } else {
-                    write!(f, ".")?;
+                    write!(f, "·")?;
                 }
+                write!(f, " ")?;
             }
             write!(f, "\n")?;
         }
