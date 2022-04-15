@@ -19,15 +19,26 @@ pub struct Grid {
 
 impl fmt::Debug for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match f.alternate() {
-            false => {
-                write!(f, "Penalty: {}\nGrid {{ dimension: {}, service_radius: {}, penalty_radius: {}, towers: {:?}, cities: {:?} }}",
-                self.total_penalty(), self.dimension, self.service_radius, self.penalty_radius, self.towers, self.cities)
-            }
-            true => {
-                write!(f, "Grid {{ \n\nPenalty: {}\n\ndimension: {}, service_radius: {}, penalty_radius: {},\n\ntowers: {:#?},\n\ncities: {:#?} \n}}",
-                self.total_penalty(), self.dimension, self.service_radius, self.penalty_radius, self.towers, self.cities)
-            }
+        if f.alternate() { // pretty print
+            write!(f, "Grid {{ \n\nPenalty: {}\nValid: {}\n\ndimension: {}, service_radius: {}, penalty_radius: {},\n\ntowers: {:#?},\n\ncities: {:#?} \n\n}}",
+            self.total_penalty(), 
+            self.is_valid(), 
+            self.dimension, 
+            self.service_radius, 
+            self.penalty_radius, 
+            self.towers,
+            self.cities)
+
+        } else { // standard print
+            
+            write!(f, "Grid {{ Penalty: {}, Valid: {}, dimension: {}, service_radius: {}, penalty_radius: {}, towers: {:?}, cities: {:?} }}",
+            self.total_penalty(),
+            self.is_valid(), 
+            self.dimension, 
+            self.service_radius, 
+            self.penalty_radius, 
+            self.towers, 
+            self.cities)
         }
     }
 }
@@ -35,7 +46,7 @@ impl fmt::Debug for Grid {
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Penalty: {}\n", self.total_penalty());
-        for y in 0..self.dimension {
+        for y in (0..self.dimension).rev() {
             for x in 0..self.dimension {
                 let point = Point::new(x as isize, y as isize);
                 if self.towers.contains_key(&point) && self.cities.contains_key(&point) {
@@ -122,7 +133,7 @@ impl Grid {
     /// Adds P to the covering towers for each city within the service radius of P.
     fn update_cities(&mut self, p: Point) {
         let coverage = self.points_within_radius(p, self.service_radius);
-        println!("{:?}", coverage);
+        // println!("p = {}, \n coverage = {:#?}", p, coverage);
 
         for (c, ts) in self.cities.iter_mut() {
             if coverage.contains(&c) && !ts.contains(&p) {
@@ -150,7 +161,7 @@ impl Grid {
         for i in -r..r {
             for j in -r..r {
                 if self.within(r, p.x, p.y, p.x + i, p.y + j) {
-                    result.insert(Point::new(p.x + i as isize, p.x + j as isize));
+                    result.insert(Point::new(p.x + i as isize, p.y + j as isize));
                 }
             }
         }
@@ -160,7 +171,7 @@ impl Grid {
 
     /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
     fn within(&self, r: isize, x1: isize, y1: isize, x2: isize, y2: isize) -> bool {
-        if (x2 < 0 || x2 > self.dimension as isize) || (y2 < 0 || y2 > self.dimension as isize) {
+        if x2 < 0 || x2 > self.dimension as isize || y2 < 0 || y2 > self.dimension as isize {
             return false;
         }
         (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
@@ -188,6 +199,12 @@ struct Point {
 }
 
 impl fmt::Debug for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }

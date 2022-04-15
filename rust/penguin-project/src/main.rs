@@ -12,12 +12,13 @@ fn main() {
     const PATH: &str = "./inputs/tiny.in";
     let mut grid = get_grid(PATH).unwrap();
     grid.add_tower(0, 0);
-    grid.add_tower(0, 1);
-    grid.add_tower(1, 0);
-    grid.add_tower(1, 1);
-    grid.add_tower(2, 3);
-    grid.add_tower(3, 5);
-    grid.add_tower(1, 2);
+    grid.add_tower(0, 5);
+    grid.add_tower(3, 4);
+    grid.add_tower(4, 3);
+    // grid.add_tower(1, 1);
+    // grid.add_tower(2, 3);
+    // grid.add_tower(3, 5);
+    // grid.add_tower(1, 2);
     println!("{:#?}", grid);
     println!("{}", grid);
 }
