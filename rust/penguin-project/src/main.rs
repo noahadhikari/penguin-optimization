@@ -1,3 +1,6 @@
+// Used to ignore unused code warnings.
+#![allow(dead_code)]
+
 mod grid;
 
 use grid::Grid;
@@ -7,8 +10,16 @@ use std::io::{self, BufReader};
 
 fn main() {
     const PATH: &str = "./inputs/tiny.in";
-    let grid = get_grid(PATH).unwrap();
-    println!("{:?}", grid);
+    let mut grid = get_grid(PATH).unwrap();
+    grid.add_tower(0, 0);
+    grid.add_tower(0, 1);
+    grid.add_tower(1, 0);
+    grid.add_tower(1, 1);
+    grid.add_tower(2, 3);
+    grid.add_tower(3, 5);
+    grid.add_tower(1, 2);
+    println!("{:#?}", grid);
+    println!("{}", grid);
 }
 
 /// Returns the grid created from the passed in input file.
@@ -27,7 +38,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
                 continue;
             }
             match i {
-                0 => println!("Number of cities: {}", first_val),
+                0 => (), //println!("Number of cities: {}", first_val),
                 1 => g.set_dimension(first_val.parse::<u8>().unwrap()),
                 2 => g.set_service_radius(first_val.parse::<u8>().unwrap()),
                 3 => g.set_penalty_radius(first_val.parse::<u8>().unwrap()),

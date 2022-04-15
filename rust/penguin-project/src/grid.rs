@@ -1,8 +1,8 @@
-use std::collections::HashSet;
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
+use std::fmt;
 
 // A Grid which we place towers and cities on.
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Grid {
     dimension: u8,
     service_radius: u8,
@@ -13,8 +13,45 @@ pub struct Grid {
     towers: HashMap<Point, u8>,
 
     // Mapping from <coordinates of cities, towers that cover it>.
-    // i.e. <(4, 4), {(1, 2), (3, 4)} >
+    // i.e. < (4, 4), {(1, 2), (3, 4)} >
     cities: HashMap<Point, HashSet<Point>>,
+}
+
+impl fmt::Debug for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match f.alternate() {
+            false => {
+                write!(f, "Penalty: {}\nGrid {{ dimension: {}, service_radius: {}, penalty_radius: {}, towers: {:?}, cities: {:?} }}",
+                self.total_penalty(), self.dimension, self.service_radius, self.penalty_radius, self.towers, self.cities)
+            }
+            true => {
+                write!(f, "Grid {{ \n\nPenalty: {}\n\ndimension: {}, service_radius: {}, penalty_radius: {},\n\ntowers: {:#?},\n\ncities: {:#?} \n}}",
+                self.total_penalty(), self.dimension, self.service_radius, self.penalty_radius, self.towers, self.cities)
+            }
+        }
+    }
+}
+
+impl fmt::Display for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Penalty: {}\n", self.total_penalty());
+        for y in 0..self.dimension {
+            for x in 0..self.dimension {
+                let point = Point::new(x as isize, y as isize);
+                if self.towers.contains_key(&point) && self.cities.contains_key(&point) {
+                    write!(f, "¢"); //ţ∉ç¢
+                } else if self.towers.contains_key(&point) {
+                    write!(f, "t")?;
+                } else if self.cities.contains_key(&point) {
+                    write!(f, "c")?;
+                } else {
+                    write!(f, ".")?;
+                }
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
+    }
 }
 
 impl Grid {
@@ -69,11 +106,15 @@ impl Grid {
         //     let w_j = self.towers.get(&q).unwrap();
         //     self.towers.insert(q, *w_j + 1);
         // }
+        let mut count = 0;
         for (&tower, w_j) in self.towers.iter_mut() {
             if penalized.contains(&tower) && tower != p {
                 *w_j += 1;
+                count += 1;
             }
         }
+
+        self.towers.insert(p, count);
         
     }
 
@@ -81,6 +122,7 @@ impl Grid {
     /// Adds P to the covering towers for each city within the service radius of P.
     fn update_cities(&mut self, p: Point) {
         let coverage = self.points_within_radius(p, self.service_radius);
+        println!("{:?}", coverage);
 
         for (c, ts) in self.cities.iter_mut() {
             if coverage.contains(&c) && !ts.contains(&p) {
@@ -108,7 +150,7 @@ impl Grid {
         for i in -r..r {
             for j in -r..r {
                 if self.within(r, p.x, p.y, p.x + i, p.y + j) {
-                    result.insert(Point::new(i as isize, j as isize));
+                    result.insert(Point::new(p.x + i as isize, p.x + j as isize));
                 }
             }
         }
@@ -139,10 +181,16 @@ impl Grid {
 }
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct Point {
     x: isize,
     y: isize,
+}
+
+impl fmt::Debug for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
 }
 
 impl Point {
