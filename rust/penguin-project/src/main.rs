@@ -28,13 +28,13 @@ fn get_grid(path: &str) -> io::Result<Grid> {
             }
             match i {
                 0 => println!("Number of cities: {}", first_val),
-                1 => g.set_dimension(first_val.parse::<usize>().unwrap()),
+                1 => g.set_dimension(first_val.parse::<u8>().unwrap()),
                 2 => g.set_service_radius(first_val.parse::<u8>().unwrap()),
                 3 => g.set_penalty_radius(first_val.parse::<u8>().unwrap()),
                 _ => {
                     // TODO: Fix this so no error will occur when there are a lot of newlines at the end of fle
-                    let x = first_val.parse::<usize>().unwrap();
-                    let y = vec.get(1).unwrap().parse::<usize>().unwrap();
+                    let x = first_val.parse::<isize>().unwrap();
+                    let y = vec.get(1).unwrap().parse::<isize>().unwrap();
                     g.add_city(x, y);
                 }
             }

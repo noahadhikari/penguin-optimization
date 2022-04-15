@@ -65,11 +65,16 @@ impl Grid {
     fn update_towers(&mut self, p: Point) {
         let penalized = self.points_within_radius(p, self.penalty_radius);
 
-        for (&t, w_j) in self.towers.iter_mut() {
-            if penalized.contains(&t) && t != p {
-                self.towers.insert(t, *w_j + 1);
+        // for &q in penalized {
+        //     let w_j = self.towers.get(&q).unwrap();
+        //     self.towers.insert(q, *w_j + 1);
+        // }
+        for (&tower, w_j) in self.towers.iter_mut() {
+            if penalized.contains(&tower) && tower != p {
+                *w_j += 1;
             }
-        } 
+        }
+        
     }
 
     /// Used upon adding a tower P.
