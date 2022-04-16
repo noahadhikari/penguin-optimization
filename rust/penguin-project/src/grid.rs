@@ -8,9 +8,9 @@ pub struct Grid {
     service_radius: u8,
     penalty_radius: u8,
 
-    // Mapping from <coordinates of towers, w_j := number of other towers within penalty radius>.
-    // i.e. <(2, 3), 6>
-    towers: HashMap<Point, u8>,
+    // Mapping from <coordinates of towers, coordinates of other towers within penalty radius>.
+    // i.e. < (2, 3), {(5, 6), (7, 8)} >
+    towers: HashMap<Point, HashSet<Point>>,
 
     // Mapping from <coordinates of cities, towers that cover it>.
     // i.e. < (4, 4), {(1, 2), (3, 4)} >
@@ -81,7 +81,8 @@ impl Grid {
     /// Returns the total penalty P of this Grid.
     pub fn penalty(&self) -> f64 {
         let mut penalty = 0.0;
-        for &w_j in self.towers.values() {
+        for penalized in self.towers.values() {
+            let w_j = penalized.len();
             penalty += (0.17 * w_j as f64).exp();
         }
         170.0 * penalty
@@ -104,30 +105,32 @@ impl Grid {
     pub fn add_tower(&mut self, x: i32, y: i32) {
         self.check_coordinates(x, y);
         let p: Point = Point::new(x, y);
-        self.towers.insert(p, 0);
-        self.update_towers(p);
+        self.update_towers(p); //implicitly adds the tower to the grid
         self.update_cities(p);
     }
 
+    /// Adds all towers passed in to this Grid, if they do not already exist.
+    // macro_rules! add_towers {
+    //     ($($x:expr),*) => {
+    //         {
+    //             $(self.add_tower($x);)*
+    //         }
+    //     }
+    // }
+    
     /// Used upon adding a tower P.
     /// Updates the w_j value for each tower within the penalty radius of P.
     fn update_towers(&mut self, p: Point) {
         let penalized = self.points_within_radius(p, self.penalty_radius);
 
-        // for &q in penalized {
-        //     let w_j = self.towers.get(&q).unwrap();
-        //     self.towers.insert(q, *w_j + 1);
-        // }
-        let mut count = 0;
-        for (&tower, w_j) in self.towers.iter_mut() {
+        let mut adj_towers = HashSet::new();
+        for (&tower, set) in self.towers.iter_mut() {
             if penalized.contains(&tower) && tower != p {
-                *w_j += 1;
-                count += 1;
+                set.insert(p);
+                adj_towers.insert(tower);
             }
         }
-
-        self.towers.insert(p, count);
-        
+        self.towers.insert(p, adj_towers);
     }
 
     /// Used upon adding a tower P.
@@ -162,7 +165,7 @@ impl Grid {
         for i in -r..r {
             for j in -r..r {
                 if self.within(r, p.x, p.y, p.x + i, p.y + j) {
-                    result.insert(Point::new(p.x + i as i32, p.y + j as i32));
+                    result.insert(Point::new(p.x + i, p.y + j));
                 }
             }
         }
@@ -171,7 +174,7 @@ impl Grid {
     }
 
 		pub fn output(&self) -> String {
-			let mut res = format!("# Penalty = {}\n", self.total_penalty());
+			let mut res = format!("# Penalty = {}\n", self.penalty());
 			res += &(self.towers.len().to_string() + "\n");
 			for (point, _) in self.towers.iter() {
 				res += &(point.file_string() + "\n");

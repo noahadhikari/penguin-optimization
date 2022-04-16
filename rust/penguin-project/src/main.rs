@@ -12,19 +12,23 @@ use std::fs::OpenOptions;
 
 fn main() {
     const INPUT_PATH: &str = "./inputs/tiny.in";
-		const OUTPUT_PATH: &str = "./tet.txt";
+	const OUTPUT_PATH: &str = "./outputs/tiny.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
     grid.add_tower(0, 0);
+    // grid.add_tower(0, 1);
     grid.add_tower(0, 5);
     grid.add_tower(3, 4);
     grid.add_tower(4, 3);
     grid.add_tower(1, 1);
-    grid.add_tower(2, 3);
-    grid.add_tower(3, 5);
-    grid.add_tower(1, 2);
+    // grid.add_tower(2, 3);
+    // grid.add_tower(3, 5);
+    // grid.add_tower(1, 2);
+
     // println!("{:#?}", grid);
     // println!("{}", grid);
-		write_sol(&grid, OUTPUT_PATH);
+	write_sol(&grid, OUTPUT_PATH);
+    println!("{:#?}", grid);
+    println!("{}", grid);
 }
 
 /// Returns the grid created from the passed in input file.
@@ -34,7 +38,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
 
-    let mut i = 0;
+    let mut i: i32 = 0;
     for line in reader.lines() {
         if let Ok(l) = line {
             let vec: Vec<&str> = l.split(' ').collect();
