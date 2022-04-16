@@ -48,7 +48,7 @@ impl fmt::Display for Grid {
         write!(f, "Penalty: {}\n", self.penalty());
         for y in (0..self.dimension).rev() {
             for x in 0..self.dimension {
-                let point = Point::new(x as isize, y as isize);
+                let point = Point::new(x as i32, y as i32);
                 if self.towers.contains_key(&point) && self.cities.contains_key(&point) {
                     write!(f, "¢"); //ţ∉ç¢
                 } else if self.towers.contains_key(&point) {
@@ -94,14 +94,14 @@ impl Grid {
 
     /// Adds a city at (x, y) to this Grid, if it does not already exist.
     /// Can only add cities if no towers have been placed yet.
-    pub fn add_city(&mut self, x: isize, y: isize) {
+    pub fn add_city(&mut self, x: i32, y: i32) {
         assert!(self.towers.len() == 0, "Cannot add cities after placing towers.");
         self.check_coordinates(x, y);
         self.cities.insert(Point::new(x, y), HashSet::new());
     }
 
     /// Adds a tower at (x, y) to this Grid, if it does not already exist.
-    pub fn add_tower(&mut self, x: isize, y: isize) {
+    pub fn add_tower(&mut self, x: i32, y: i32) {
         self.check_coordinates(x, y);
         let p: Point = Point::new(x, y);
         self.towers.insert(p, 0);
@@ -144,25 +144,25 @@ impl Grid {
     }
         
     /// Removes the tower at (x, y) from this Grid, if it exists.
-    pub fn remove_tower(&mut self, x: isize, y: isize) {
+    pub fn remove_tower(&mut self, x: i32, y: i32) {
         self.check_coordinates(x, y);
         self.towers.remove(&Point::new(x, y));
     }
 
     /// Asserts that the given coordinates are within this Grid.
-    fn check_coordinates(&self, x: isize, y: isize) {
-        assert!(x >= 0 && y >= 0 && x < self.dimension as isize && y < self.dimension as isize, 
+    fn check_coordinates(&self, x: i32, y: i32) {
+        assert!(x >= 0 && y >= 0 && x < self.dimension as i32 && y < self.dimension as i32, 
             "Coordinates off the edge of grid: ({}, {}) for grid dimension {}", x, y, self.dimension);
     }
 
     /// Returns a vector of all the grid points within the given radius of the given point.
     fn points_within_radius(&self, p: Point, r: u8) -> HashSet<Point> {
         let mut result = HashSet::new();
-        let r = r as isize;
+        let r = r as i32;
         for i in -r..r {
             for j in -r..r {
                 if self.within(r, p.x, p.y, p.x + i, p.y + j) {
-                    result.insert(Point::new(p.x + i as isize, p.y + j as isize));
+                    result.insert(Point::new(p.x + i as i32, p.y + j as i32));
                 }
             }
         }
@@ -170,9 +170,18 @@ impl Grid {
         result
     }
 
+		pub fn output(&self) -> String {
+			let mut res = format!("# Penalty = {}\n", self.total_penalty());
+			res += &(self.towers.len().to_string() + "\n");
+			for (point, _) in self.towers.iter() {
+				res += &(point.file_string() + "\n");
+			}
+			res
+		}
+
     /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
-    fn within(&self, r: isize, x1: isize, y1: isize, x2: isize, y2: isize) -> bool {
-        if x2 < 0 || x2 > self.dimension as isize || y2 < 0 || y2 > self.dimension as isize {
+    fn within(&self, r: i32, x1: i32, y1: i32, x2: i32, y2: i32) -> bool {
+        if x2 < 0 || x2 > self.dimension as i32 || y2 < 0 || y2 > self.dimension as i32 {
             return false;
         }
         (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
@@ -189,14 +198,13 @@ impl Grid {
     pub fn set_dimension(&mut self, dim: u8) {
         self.dimension = dim;
     }
-
 }
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct Point {
-    x: isize,
-    y: isize,
+    x: i32,
+    y: i32,
 }
 
 impl fmt::Debug for Point {
@@ -213,7 +221,7 @@ impl fmt::Display for Point {
 
 impl Point {
     /// Creates and returns a new Point with the given x and y coordinates.
-    fn new(x: isize, y: isize) -> Point {
+    fn new(x: i32, y: i32) -> Point {
         Point { x, y }
     }
 
@@ -225,6 +233,10 @@ impl Point {
     /// Returns the Euclidean distance between this point and the given point.
     fn dist_to(&self, p: &Point) -> f64 {
         Point::dist(self, p)
-    }   
+    }
+
+		fn file_string(&self) -> String {
+			self.x.to_string() + " " + &self.y.to_string()	
+		}
 
 }
