@@ -21,7 +21,7 @@ impl fmt::Debug for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() { // pretty print
             write!(f, "Grid {{ \n\nPenalty: {}\nValid: {}\n\ndimension: {}, service_radius: {}, penalty_radius: {},\n\ntowers: {:#?},\n\ncities: {:#?} \n\n}}",
-            self.total_penalty(), 
+            self.penalty(), 
             self.is_valid(), 
             self.dimension, 
             self.service_radius, 
@@ -32,7 +32,7 @@ impl fmt::Debug for Grid {
         } else { // standard print
             
             write!(f, "Grid {{ Penalty: {}, Valid: {}, dimension: {}, service_radius: {}, penalty_radius: {}, towers: {:?}, cities: {:?} }}",
-            self.total_penalty(),
+            self.penalty(),
             self.is_valid(), 
             self.dimension, 
             self.service_radius, 
@@ -45,7 +45,7 @@ impl fmt::Debug for Grid {
 
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Penalty: {}\n", self.total_penalty());
+        write!(f, "Penalty: {}\n", self.penalty());
         for y in (0..self.dimension).rev() {
             for x in 0..self.dimension {
                 let point = Point::new(x as isize, y as isize);
@@ -79,12 +79,12 @@ impl Grid {
     }
 
     /// Returns the total penalty P of this Grid.
-    pub fn total_penalty(&self) -> f64 {
-        let mut total_penalty = 0.0;
+    pub fn penalty(&self) -> f64 {
+        let mut penalty = 0.0;
         for &w_j in self.towers.values() {
-            total_penalty += (0.17 * w_j as f64).exp();
+            penalty += (0.17 * w_j as f64).exp();
         }
-        170.0 * total_penalty
+        170.0 * penalty
     }
 
     /// Returns whether the towers in this Grid cover all cities.
