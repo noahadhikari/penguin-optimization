@@ -190,6 +190,10 @@ impl Grid {
         (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
     }
 
+		pub fn get_cities(&self) -> &HashMap<Point, HashSet<Point>> {
+			&self.cities
+		} 
+
     pub fn set_service_radius(&mut self, serv_radius: u8) {
         self.service_radius = serv_radius;
     }
@@ -205,7 +209,7 @@ impl Grid {
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-struct Point {
+pub struct Point {
     x: i32,
     y: i32,
 }
@@ -240,6 +244,14 @@ impl Point {
 
 		fn file_string(&self) -> String {
 			self.x.to_string() + " " + &self.y.to_string()	
+		}
+
+		pub fn get_x(&self) -> i32 {
+			self.x
+		}
+
+		pub fn get_y(&self) -> i32 {
+			self.y
 		}
 
 }

@@ -14,23 +14,27 @@ fn main() {
     const INPUT_PATH: &str = "./inputs/tiny.in";
     const OUTPUT_PATH: &str = "./outputs/tiny.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
-    println!("{:?}", grid);
-    // write_sol(&grid, OUTPUT_PATH);
 
-    //   grid.add_tower(0, 0);
-    //   // grid.add_tower(0, 1);
-    //   grid.add_tower(0, 5);
-    //   grid.add_tower(3, 4);
-    //   grid.add_tower(4, 3);
-    //   grid.add_tower(1, 1);
-    //   // grid.add_tower(2, 3);
-    //   // grid.add_tower(3, 5);
-    //   // grid.add_tower(1, 2);
+    place_at_cities(&mut grid);
 
-    //   // println!("{:#?}", grid);
-    //   // println!("{}", grid);
-    //   println!("{:#?}", grid);
-    //   println!("{}", grid);
+    println!("{}", grid);
+    write_sol(&grid, OUTPUT_PATH);
+}
+
+// Algorithms
+
+/// Greedy algorithm for benchmarking.
+/// Places towers at all city locations that haven't been covered
+fn place_at_cities(grid: &mut Grid) {
+    let cities = grid.get_cities().clone();
+    let city_points = cities.keys();
+    for point in city_points {
+        let covered = grid.get_cities().get(point).unwrap();
+        if covered.len() > 0 {
+            continue;
+        }
+        grid.add_tower(point.get_x(), point.get_y());
+    }
 }
 
 /// Returns the grid created from the passed in input file.
