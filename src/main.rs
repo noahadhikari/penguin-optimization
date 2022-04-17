@@ -5,30 +5,32 @@ mod grid;
 
 use grid::Grid;
 use std::fs::File;
-use std::io::prelude::*;
-use std::io::{self, BufReader};
-use std::io::Write;
 use std::fs::OpenOptions;
+use std::io::prelude::*;
+use std::io::Write;
+use std::io::{self, BufReader};
 
 fn main() {
     const INPUT_PATH: &str = "./inputs/tiny.in";
-	const OUTPUT_PATH: &str = "./outputs/tiny.out";
+    const OUTPUT_PATH: &str = "./outputs/tiny.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
-    grid.add_tower(0, 0);
-    // grid.add_tower(0, 1);
-    grid.add_tower(0, 5);
-    grid.add_tower(3, 4);
-    grid.add_tower(4, 3);
-    grid.add_tower(1, 1);
-    // grid.add_tower(2, 3);
-    // grid.add_tower(3, 5);
-    // grid.add_tower(1, 2);
+    println!("{:?}", grid);
+    // write_sol(&grid, OUTPUT_PATH);
 
-    // println!("{:#?}", grid);
-    // println!("{}", grid);
-	write_sol(&grid, OUTPUT_PATH);
-    println!("{:#?}", grid);
-    println!("{}", grid);
+    //   grid.add_tower(0, 0);
+    //   // grid.add_tower(0, 1);
+    //   grid.add_tower(0, 5);
+    //   grid.add_tower(3, 4);
+    //   grid.add_tower(4, 3);
+    //   grid.add_tower(1, 1);
+    //   // grid.add_tower(2, 3);
+    //   // grid.add_tower(3, 5);
+    //   // grid.add_tower(1, 2);
+
+    //   // println!("{:#?}", grid);
+    //   // println!("{}", grid);
+    //   println!("{:#?}", grid);
+    //   println!("{}", grid);
 }
 
 /// Returns the grid created from the passed in input file.
@@ -39,6 +41,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
     let reader = BufReader::new(file);
 
     let mut i: i32 = 0;
+    let mut num_cities: i32 = -1;
     for line in reader.lines() {
         if let Ok(l) = line {
             let vec: Vec<&str> = l.split(' ').collect();
@@ -47,15 +50,18 @@ fn get_grid(path: &str) -> io::Result<Grid> {
                 continue;
             }
             match i {
-                0 => (), //println!("Number of cities: {}", first_val),
+                0 => num_cities = first_val.parse::<i32>().unwrap(),
                 1 => g.set_dimension(first_val.parse::<u8>().unwrap()),
                 2 => g.set_service_radius(first_val.parse::<u8>().unwrap()),
                 3 => g.set_penalty_radius(first_val.parse::<u8>().unwrap()),
                 _ => {
-                    // TODO: Fix this so no error will occur when there are a lot of newlines at the end of fle
-                    let x = first_val.parse::<i32>().unwrap();
-                    let y = vec.get(1).unwrap().parse::<i32>().unwrap();
-                    g.add_city(x, y);
+                    if (4..(4 + num_cities)).contains(&i) {
+                        let x = first_val.parse::<i32>().unwrap();
+                        let y = vec.get(1).unwrap().parse::<i32>().unwrap();
+                        g.add_city(x, y);
+                    } else {
+                        println!("Past all cities");
+                    }
                 }
             }
             i += 1;
@@ -65,12 +71,12 @@ fn get_grid(path: &str) -> io::Result<Grid> {
 }
 
 fn write_sol(grid: &Grid, path: &str) {
-	let data = grid.output();
-	let mut f = OpenOptions::new()
-			.write(true)
-			.truncate(true)
-			.create(true)
-			.open(path)
-			.expect("Unable to open file");
-	f.write_all(data.as_bytes()).expect("Unable to write data");
+    let data = grid.output();
+    let mut f = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path)
+        .expect("Unable to open file");
+    f.write_all(data.as_bytes()).expect("Unable to write data");
 }
