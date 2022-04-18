@@ -43,6 +43,7 @@ impl fmt::Debug for Grid {
     }
 }
 
+/// Pretty printer for Grid.
 impl fmt::Display for Grid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Penalty: {}\n", self.penalty());
@@ -50,13 +51,13 @@ impl fmt::Display for Grid {
             for x in 0..self.dimension {
                 let p = Point::new(x as i32, y as i32);
                 if self.towers.contains_key(&p) && self.cities.contains_key(&p) {
-                    write!(f, "¢"); //ţ∉ç¢
+                    write!(f, "¢"); //city and tower at same point
                 } else if self.towers.contains_key(&p) {
-                    write!(f, "t")?;
+                    write!(f, "t")?; //tower at this point
                 } else if self.cities.contains_key(&p) {
-                    write!(f, "c")?;
+                    write!(f, "c")?; // city at this point
                 } else {
-                    write!(f, "·")?;
+                    write!(f, "·")?; //nothing at this point
                 }
                 write!(f, " ")?;
             }
@@ -189,6 +190,7 @@ impl Grid {
         result
     }
 
+    /// Returns the file output string of this entire Grid.
     pub fn output(&self) -> String {
         let mut res = format!("# Penalty = {}\n", self.penalty());
         res += &(self.towers.len().to_string() + "\n");
@@ -258,6 +260,7 @@ impl Point {
         Point::dist(self, p)
     }
 
+    /// Returns the file string form of this point, e.g. (3, 4) -> "3 4".
     fn file_string(&self) -> String {
         self.x.to_string() + " " + &self.y.to_string()	
     }
