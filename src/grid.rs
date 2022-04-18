@@ -98,7 +98,9 @@ impl Grid {
     pub fn add_city(&mut self, x: i32, y: i32) {
         assert!(self.towers.len() == 0, "Cannot add cities after placing towers.");
         self.check_coordinates(x, y);
-        self.cities.insert(Point::new(x, y), HashSet::new());
+        let p = Point::new(x, y);
+        assert!(!self.cities.contains_key(&p), "Cannot add city at {:?} because it already exists.", p);
+        self.cities.insert(p, HashSet::new());
     }
 
     /// Adds a tower at (x, y) to this Grid, if it does not already exist.
