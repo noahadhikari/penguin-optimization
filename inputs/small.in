@@ -1,6 +1,6 @@
 # Small instance.
 # Number of cities, 15 <= N <= 25
-22
+25
 # Grid size, 30
 30
 # Rs, 3
@@ -36,7 +36,3 @@
 13 9
 11 27
 # End of inputs
-
-
-
-
