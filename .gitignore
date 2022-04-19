@@ -4,3 +4,5 @@ __pycache__
 .git
 .o
 target/
+inputs/
+troll_submit/
