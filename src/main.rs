@@ -11,7 +11,7 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/medium.in";
+    const INPUT_PATH: &str = "./troll_submit/medium.in";
     const OUTPUT_PATH: &str = "./outputs/medium.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
 
@@ -63,9 +63,10 @@ fn get_grid(path: &str) -> io::Result<Grid> {
                         let x = first_val.parse::<i32>().unwrap();
                         let y = vec.get(1).unwrap().parse::<i32>().unwrap();
                         g.add_city(x, y);
-                    } else {
-                        println!("Past all cities");
-                    }
+                    } 
+                    // else {
+                    //     println!("Past all cities");
+                    // }
                 }
             }
             i += 1;
