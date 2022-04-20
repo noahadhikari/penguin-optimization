@@ -381,13 +381,11 @@ mod lp_solver {
         fn add_city_constraints(&mut self, cities: HashSet<Point>) {
             for c in cities {
                 let coverage = Point::points_within_radius(c, self.r_s, self.dim);
-                // println!("c:{}, coverage: {:?}", c, coverage);
-                let name = format!("c_{}_{}", c.x, c.y);
-                let sum = self.vars.add(variable().integer().name(name));
-                self.constraints.push(constraint!(sum >= 1));
+                let mut sum = Expression::with_capacity(coverage.len());
                 for point in coverage {
-                    self.constraints.push(constraint!(sum >= self.z[point.x as usize][point.y as usize]));
+                    sum.add_mul(1, self.z[point.x as usize][point.y as usize]);
                 }
+                self.constraints.push(sum.geq(1));
             }
         }
 
@@ -432,13 +430,17 @@ mod lp_solver {
 
         /// Assumes everything (variables, constraints) has been added already
         fn solution(self) -> impl Solution {
-            println!("{:#?}", self.constraints);
-            let mut v = self.vars.minimise(self.total_penalty).using(default_solver);
+            // for (v, d) in self.vars.iter_variables_with_def() {
+            //     println!("{:?} = {:?}", v, d);
+            // }
+            // println!("{:#?}", self.constraints);
+
+            let mut model = self.vars.minimise(self.total_penalty).using(default_solver);
             for c in self.constraints {
-                v = v.with(c);
+                model = model.with(c);
             }
             
-            v.solve().unwrap()
+            model.solve().unwrap()
         }
         
         pub fn tower_solution(self) -> HashSet<Point> {

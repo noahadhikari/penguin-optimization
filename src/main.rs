@@ -12,14 +12,14 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/trivial.in";
-    const OUTPUT_PATH: &str = "./outputs/trivial.out";
+    const INPUT_PATH: &str = "./inputs/small.in";
+    const OUTPUT_PATH: &str = "./outputs/small.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
 
     // place_at_cities(&mut grid);
 
     grid.lp_solve();
-    
+
     write_sol(&grid, OUTPUT_PATH);
     println!("Valid: {}", grid.is_valid());
     println!("{}", grid);
