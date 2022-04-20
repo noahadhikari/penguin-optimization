@@ -358,7 +358,7 @@ mod lp_solver {
         }
 
         /// Adds the penalty variable p_ijkl for point ij and tower kl to the LP.
-        fn add_penalty_variables(&mut self) {
+        fn add_penalty_variables_ijkl(&mut self) {
             for i in 0..(self.dim as usize) {
                 for j in 0..(self.dim as usize) {
                     let p = Point::new(i as i32, j as i32);
@@ -377,6 +377,66 @@ mod lp_solver {
                     }
                 }
             }
+        }
+
+        /// Adds penalty variables using big-M constraints.
+        fn add_penalty_variables_big_m(&mut self) {
+            // p_ij for a given ij will be 0 if z_ij is 0 (tower not there)
+            // and if z_ij is 1 (tower there) then p_ij will be sum of all the z_ij within penalty radius of ij.
+
+            // how to formulate with lp constraints?
+
+            // p_ij = z_ij * (sum(z_kl))
+            //     = z_ij and z_k1l1 + z_ij and z_k1l2 + z_ij and z_k2l1 + z_ij and z_k2l2 + ...
+
+
+            // heres the good stuff
+
+            // a = z_ij, b = 0, c = p_ij, d = sum kl, e = 0
+
+            // z_ij > 0 iff delta = 1
+
+            // z_ij >= -M(1-delta)
+            // z_ij <= M*delta
+            // delta is binary
+
+
+            // delta = 1 implies p_ij = sum(z_kl in penalty radius of ij)
+            // delta = 0 implies p_ij = 0
+
+            // sum kl - M(1 - delta) <= p_ij <= sum kl + M(1 - delta)
+            // - M * delta <= p_ij <= M * delta
+
+            const M: i32 = 10000000;
+            for i in 0..(self.dim as usize) {
+                for j in 0..(self.dim as usize) {
+                    let p = Point::new(i as i32, j as i32);
+                    let coverage = Point::points_within_radius(p, self.r_p, self.dim);
+                    let z_ij = self.z[i][j];
+                    let delta = self.vars.add(variable().binary().name(format!("delta_{}_{}", i, j)));
+                    self.constraints.push(constraint!(z_ij >= -M * (1 - delta)));
+                    self.constraints.push(constraint!(z_ij <= M * delta));
+
+                    let mut sum = Expression::with_capacity(coverage.len());
+                    let p_ij = self.vars.add(variable().integer().name(format!("p_{}_{}", i, j)));
+                    for point in coverage {
+                        sum.add_mul(1, self.z[point.x as usize][point.y as usize]);
+                    }
+
+                    let sum2 = sum.clone();
+                    self.constraints.push(constraint!(sum - M * (1 - delta) <= p_ij));
+                    self.constraints.push(constraint!(p_ij <= sum2 + M * (1 - delta)));
+
+                    self.constraints.push(constraint!(-M * delta <= p_ij));
+                    self.constraints.push(constraint!(p_ij <= M * delta));
+                }
+            }
+        }
+
+        /// Adds the penalty variables p_ij to the LP.
+        fn add_penalty_variables(&mut self) {
+            // self.add_penalty_variables_ijkl();
+            self.add_penalty_variables_big_m();
         }
 
         /// Adds the city coverage constraints to the LP.
@@ -444,8 +504,8 @@ mod lp_solver {
             }
             
             model.set_parameter("sec", &self.max_time.to_string());
-            model.set_parameter("log", &2.to_string()); // uncomment for less output
-            model.set_parameter("cutoff", &2000.to_string());
+            // model.set_parameter("log", &2.to_string()); // comment for less output
+            // model.set_parameter("cutoff", &2000.to_string());
             model.solve().unwrap()
         }
         
