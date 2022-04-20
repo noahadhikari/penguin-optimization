@@ -207,9 +207,9 @@ impl Grid {
 
 
     /// Destructively (changes the grid's tower configuration) solves the Grid using the LP.
-    pub fn solve(&mut self) {
+    pub fn lp_solve(&mut self) {
         assert!(self.towers.len() == 0, "Cannot solve a grid with towers already placed.");
-        use solver::GridProblem;
+        use lp_solver::GridProblem;
         
         let mut city_keys = HashSet::new();
         for (&c, _) in self.cities.iter() {
@@ -218,16 +218,14 @@ impl Grid {
 
         let problem = GridProblem::new(
             self.dimension, 
-            self.penalty_radius, 
             self.service_radius, 
+            self.penalty_radius, 
             city_keys
         );
 
         for t in problem.tower_solution() {
             self.add_tower(t.x, t.y);
         };
-
-
     }
 }
 
@@ -283,8 +281,8 @@ impl Point {
     pub fn points_within_radius(p: Point, r: u8, dim: u8) -> HashSet<Point> {
         let mut result = HashSet::new();
         let r = r as i32;
-        for i in -r..r {
-            for j in -r..r {
+        for i in -r..(r+1) {
+            for j in -r..(r+1) {
                 if Self::within(r, p.x, p.y, p.x + i, p.y + j, dim) {
                     result.insert(Self::new(p.x + i, p.y + j));
                 }
@@ -296,7 +294,7 @@ impl Point {
 
     /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
     fn within(r: i32, x1: i32, y1: i32, x2: i32, y2: i32, d: u8) -> bool {
-        if x2 < 0 || x2 > d as i32 || y2 < 0 || y2 > d as i32 {
+        if x2 < 0 || x2 >= d as i32 || y2 < 0 || y2 >= d as i32 {
             return false;
         }
         (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
@@ -308,7 +306,7 @@ impl Point {
 
 
 
-mod solver {
+mod lp_solver {
 
     /// Idea: Because penalty is monotonic ish, can try to minimize a linear penalty to use LP.
     /// 
@@ -350,13 +348,14 @@ mod solver {
     }
 
     impl GridProblem {
-        /// Adds a new tower variable at the given point to the LP.
-        fn add_tower_variable(&mut self, _tower: Point) -> Variable {
-            let is_tower = self.vars.add(variable().binary());
+        /// Adds a new tower variable z_ij at the given point (i, j) to the LP.
+        fn add_tower_variable(&mut self, tower: Point) -> Variable {
+            let name = format!("z_{}_{}", tower.x, tower.y);
+            let is_tower = self.vars.add(variable().binary().name(name));
             is_tower
         }
 
-        /// Adds the penalty variable for point ij and tower kl to the LP.
+        /// Adds the penalty variable p_ijkl for point ij and tower kl to the LP.
         fn add_penalty_variables(&mut self) {
             for i in 0..(self.dim as usize) {
                 for j in 0..(self.dim as usize) {
@@ -366,7 +365,8 @@ mod solver {
                         let k = point.x as usize;
                         let l = point.y as usize;
 
-                        let p_ijkl = self.vars.add(variable().binary());
+                        let name = format!("p_{}_{}_{}_{}", i, j, k, l);
+                        let p_ijkl = self.vars.add(variable().binary().name(name));
                         self.constraints.push(constraint!(p_ijkl <= self.z[i][j]));
                         self.constraints.push(constraint!(p_ijkl <= self.z[k][l]));
                         self.constraints.push(constraint!(p_ijkl >= self.z[i][j] + self.z[k][l] - 1));
@@ -381,11 +381,13 @@ mod solver {
         fn add_city_constraints(&mut self, cities: HashSet<Point>) {
             for c in cities {
                 let coverage = Point::points_within_radius(c, self.r_s, self.dim);
-                let mut sum = Expression::with_capacity(coverage.len());
-                for point in coverage {
-                    sum += self.z[point.x as usize][point.y as usize];
-                }
+                // println!("c:{}, coverage: {:?}", c, coverage);
+                let name = format!("c_{}_{}", c.x, c.y);
+                let sum = self.vars.add(variable().integer().name(name));
                 self.constraints.push(constraint!(sum >= 1));
+                for point in coverage {
+                    self.constraints.push(constraint!(sum >= self.z[point.x as usize][point.y as usize]));
+                }
             }
         }
 
@@ -408,8 +410,8 @@ mod solver {
             lp.z = vec![vec![dummy; dim.into()]; dim.into()];
             for i in 0..dim {
                 for j in 0..dim {
-                    let tower = Point::new(i as i32, j as i32);
-                    lp.z[i as usize][j as usize] = lp.add_tower_variable(tower);
+                    let potential_tower = Point::new(i as i32, j as i32);
+                    lp.z[i as usize][j as usize] = lp.add_tower_variable(potential_tower);
                 }
             }
 
@@ -430,20 +432,24 @@ mod solver {
 
         /// Assumes everything (variables, constraints) has been added already
         fn solution(self) -> impl Solution {
+            println!("{:#?}", self.constraints);
             let mut v = self.vars.minimise(self.total_penalty).using(default_solver);
             for c in self.constraints {
                 v = v.with(c);
             }
+            
             v.solve().unwrap()
         }
         
         pub fn tower_solution(self) -> HashSet<Point> {
             const TOL: f64 = 1e-6;
+            let d = self.dim as usize;
+            let z = self.z.clone();
             let solution = self.solution();
             let mut result = HashSet::new();
-            for i in 0..(self.dim as usize) {
-                for j in 0..(self.dim as usize) {
-                    if (solution.value(self.z[i][j]) - 1.).abs() < TOL {
+            for i in 0..(d) {
+                for j in 0..(d) {
+                    if (solution.value(z[i][j]) - 1.).abs() < TOL {
                         result.insert(Point::new(i as i32, j as i32));
                     }
                 }

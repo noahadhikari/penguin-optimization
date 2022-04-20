@@ -12,15 +12,17 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/small.in";
-    const OUTPUT_PATH: &str = "./outputs/small.out";
+    const INPUT_PATH: &str = "./inputs/trivial.in";
+    const OUTPUT_PATH: &str = "./outputs/trivial.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
 
-    place_at_cities(&mut grid);
+    // place_at_cities(&mut grid);
 
-    println!("{}", grid);
-    grid.solve();
+    grid.lp_solve();
+    
     write_sol(&grid, OUTPUT_PATH);
+    println!("Valid: {}", grid.is_valid());
+    println!("{}", grid);
 }
 
 // Algorithms
@@ -30,6 +32,7 @@ fn main() {
 fn place_at_cities(grid: &mut Grid) {
     let cities = grid.get_cities().clone();
     let city_points = cities.keys();
+    println!("{:?}", city_points);
     for point in city_points {
         let covered = grid.get_cities().get(point).unwrap();
         if covered.len() > 0 {
