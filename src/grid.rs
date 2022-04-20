@@ -116,7 +116,7 @@ impl Grid {
     /// Used upon adding a tower T.
     /// Updates the penalized towers for each tower within the penalty radius of T.
     fn update_towers_add(&mut self, p: Point) {
-        let penalized = self.points_within_radius(p, self.penalty_radius);
+        let penalized = Point::points_within_radius(p, self.penalty_radius, self.dimension);
 
         let mut adj_towers = HashSet::new();
         for (&tower, set) in self.towers.iter_mut() {
@@ -131,7 +131,7 @@ impl Grid {
     /// Used upon adding a tower T.
     /// Adds T to the covering towers for each city within the service radius of T.
     fn update_cities_add(&mut self, t: Point) {
-        let coverage = self.points_within_radius(t, self.service_radius);
+        let coverage = Point::points_within_radius(t, self.service_radius, self.dimension);
         // println!("t = {}, \n coverage = {:#?}", t, coverage);
 
         for (c, ts) in self.cities.iter_mut() {
@@ -175,20 +175,6 @@ impl Grid {
             "Coordinates off the edge of grid: ({}, {}) for grid dimension {}", x, y, self.dimension);
     }
 
-    /// Returns a vector of all the grid points within the given radius of the given point.
-    fn points_within_radius(&self, p: Point, r: u8) -> HashSet<Point> {
-        let mut result = HashSet::new();
-        let r = r as i32;
-        for i in -r..r {
-            for j in -r..r {
-                if self.within(r, p.x, p.y, p.x + i, p.y + j) {
-                    result.insert(Point::new(p.x + i, p.y + j));
-                }
-            }
-        }
-
-        result
-    }
 
     /// Returns the file output string of this entire Grid.
     pub fn output(&self) -> String {
@@ -200,13 +186,7 @@ impl Grid {
         res
     }
 
-    /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
-    fn within(&self, r: i32, x1: i32, y1: i32, x2: i32, y2: i32) -> bool {
-        if x2 < 0 || x2 > self.dimension as i32 || y2 < 0 || y2 > self.dimension as i32 {
-            return false;
-        }
-        (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
-    }
+    
 
     pub fn get_cities(&self) -> &HashMap<Point, HashSet<Point>> {
         &self.cities
@@ -222,6 +202,14 @@ impl Grid {
 
     pub fn set_dimension(&mut self, dim: u8) {
         self.dimension = dim;
+    }
+
+
+
+
+    pub fn solve(&self) {
+        use solver::GridProblem;
+
     }
 }
 
@@ -273,4 +261,138 @@ impl Point {
         self.y
     }
 
+    /// Returns a set of all the grid points within the given radius of the given point.
+    pub fn points_within_radius(p: Point, r: u8, dim: u8) -> HashSet<Point> {
+        let mut result = HashSet::new();
+        let r = r as i32;
+        for i in -r..r {
+            for j in -r..r {
+                if Self::within(r, p.x, p.y, p.x + i, p.y + j, dim) {
+                    result.insert(Self::new(p.x + i, p.y + j));
+                }
+            }
+        }
+
+        result
+    }
+
+    /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
+    fn within(r: i32, x1: i32, y1: i32, x2: i32, y2: i32, d: u8) -> bool {
+        if x2 < 0 || x2 > d as i32 || y2 < 0 || y2 > d as i32 {
+            return false;
+        }
+        (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
+    }
+
+}
+
+
+
+
+
+mod solver {
+
+    /// Idea: Because penalty is monotonic ish, can try to minimize a linear penalty to use LP.
+    /// 
+    /// let z_{ij} = {0, 1} correspond to whether or not a tower is placed at (i, j)
+    /// 
+    /// for each city, ensure that at least one tower is covering it.
+    /// i.e. for each c_i, sum of z_{ij} in coverage(c_i) >= 1
+    /// 
+    /// for each point in z, want to calculate penalty for that point, but only if the tower is actually there.
+    /// let p_{ij,kl} = penalty at position ij for position kl only if tower z_ij is present and z_kl exists for all
+    ///     kl in the penalty coverage of ij.
+    /// p_ijkl = z_kl if z_ij else 0
+    /// -> z_ij AND z_kl
+    /// -> p_ij <= z_kl, p_ij <= z_ij, p_ij >= z_ij + z_kl - 1.
+    /// 
+    /// TODO: investigate - can we have piecewise linear (leaky relu) for each p_i? Then sum over p_i to get total penalty. 
+    ///     will ignore for now.
+    /// 
+    /// all variables are binary except the total penalty (maybe unnecessary, but P = sum_ij p_ij).
+    /// minimize sum of p_ij (== P).
+    /// 
+    /// ------------------------------
+    /// 
+    /// total number of variables is on the order of R^2 * d^2.
+    
+    use super::*;
+    use good_lp::variable::ProblemVariables;
+    use good_lp::constraint::Constraint;
+    use good_lp::{default_solver, constraint, variable, variables, Expression, Solution, SolverModel, Variable};
+
+    pub struct GridProblem {
+        vars: ProblemVariables,
+        constraints: Vec<Constraint>,
+        total_penalty: Expression,
+        dim: u8,
+        r_s: u8,
+        r_p: u8,
+    }
+
+    impl GridProblem {
+        /// Adds a new tower variable at the given point to the LP.
+        fn add_tower_variable(&mut self, _tower: Point) -> Variable {
+            let is_tower = self.vars.add(variable().binary());
+            is_tower
+        }
+
+        fn add_penalty_variables(&mut self, z: Vec<Vec<Variable>>) {
+            for i in 0..self.dim {
+                for j in 0..self.dim {
+                    let p = Point::new(i.into(), j.into());
+                    let coverage = Point::points_within_radius(p, self.r_p, self.dim);
+                    for point in coverage {
+                        let x = point.x as u8;
+                        let y = point.y as u8;
+
+                        let p_ij = self.vars.add(variable().binary());
+                        self.constraints.push(constraint!());
+                    }
+                }
+            }
+        }
+
+
+        fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>) -> GridProblem {
+            let mut lp = GridProblem {
+                vars: variables![],
+                constraints: vec![],
+                dim,
+                r_s,
+                r_p,
+                total_penalty: 2147483647.into(),
+            };
+
+            // add variables for each tower
+            let dummy = lp.add_tower_variable(Point::new(-12345, -12345));
+            let mut z = vec![vec![dummy; dim.into()]; dim.into()];
+            for i in 0..dim {
+                for j in 0..dim {
+                    let tower = Point::new(i as i32, j as i32);
+                    z[i as usize][j as usize] = lp.add_tower_variable(tower);
+                }
+            }
+
+            lp.add_penalty_variables(z);
+
+
+            // let variables: Vec<_> = products.into_iter().map(|p| pb.add(p)).collect();
+            // let solution = pb.best_product_quantities();
+            // let product_quantities: Vec<_> = variables.iter().map(|&v| solution.value(v)).collect();
+
+
+            lp
+        }
+
+        /// Assumes everything (variables, constraints) has been added already
+        fn solve(self) -> impl Solution {
+            self.vars
+                .minimise(self.total_penalty)
+                .using(default_solver)
+                .solve()
+                .unwrap()
+        }
+        
+    }
 }
