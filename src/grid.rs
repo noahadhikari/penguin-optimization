@@ -206,9 +206,27 @@ impl Grid {
 
 
 
-
-    pub fn solve(&self) {
+    /// Destructively (changes the grid's tower configuration) solves the Grid using the LP.
+    pub fn solve(&mut self) {
+        assert!(self.towers.len() == 0, "Cannot solve a grid with towers already placed.");
         use solver::GridProblem;
+        
+        let mut city_keys = HashSet::new();
+        for (&c, _) in self.cities.iter() {
+            city_keys.insert(c);
+        }
+
+        let problem = GridProblem::new(
+            self.dimension, 
+            self.penalty_radius, 
+            self.service_radius, 
+            city_keys
+        );
+
+        for t in problem.tower_solution() {
+            self.add_tower(t.x, t.y);
+        };
+
 
     }
 }
@@ -297,14 +315,14 @@ mod solver {
     /// let z_{ij} = {0, 1} correspond to whether or not a tower is placed at (i, j)
     /// 
     /// for each city, ensure that at least one tower is covering it.
-    /// i.e. for each c_i, sum of z_{ij} in coverage(c_i) >= 1
+    /// i.e. for each c_ij, sum of z_{ij} in coverage(c_ij) >= 1
     /// 
     /// for each point in z, want to calculate penalty for that point, but only if the tower is actually there.
     /// let p_{ij,kl} = penalty at position ij for position kl only if tower z_ij is present and z_kl exists for all
     ///     kl in the penalty coverage of ij.
     /// p_ijkl = z_kl if z_ij else 0
     /// -> z_ij AND z_kl
-    /// -> p_ij <= z_kl, p_ij <= z_ij, p_ij >= z_ij + z_kl - 1.
+    /// -> p_ijkl <= z_kl, p_ijkl <= z_ij, p_ijkl >= z_ij + z_kl - 1.
     /// 
     /// TODO: investigate - can we have piecewise linear (leaky relu) for each p_i? Then sum over p_i to get total penalty. 
     ///     will ignore for now.
@@ -323,6 +341,7 @@ mod solver {
 
     pub struct GridProblem {
         vars: ProblemVariables,
+        z: Vec<Vec<Variable>>,
         constraints: Vec<Constraint>,
         total_penalty: Expression,
         dim: u8,
@@ -337,27 +356,47 @@ mod solver {
             is_tower
         }
 
-        fn add_penalty_variables(&mut self, z: Vec<Vec<Variable>>) {
-            for i in 0..self.dim {
-                for j in 0..self.dim {
-                    let p = Point::new(i.into(), j.into());
+        /// Adds the penalty variable for point ij and tower kl to the LP.
+        fn add_penalty_variables(&mut self) {
+            for i in 0..(self.dim as usize) {
+                for j in 0..(self.dim as usize) {
+                    let p = Point::new(i as i32, j as i32);
                     let coverage = Point::points_within_radius(p, self.r_p, self.dim);
                     for point in coverage {
-                        let x = point.x as u8;
-                        let y = point.y as u8;
+                        let k = point.x as usize;
+                        let l = point.y as usize;
 
-                        let p_ij = self.vars.add(variable().binary());
-                        self.constraints.push(constraint!());
+                        let p_ijkl = self.vars.add(variable().binary());
+                        self.constraints.push(constraint!(p_ijkl <= self.z[i][j]));
+                        self.constraints.push(constraint!(p_ijkl <= self.z[k][l]));
+                        self.constraints.push(constraint!(p_ijkl >= self.z[i][j] + self.z[k][l] - 1));
+
+                        self.total_penalty += p_ijkl;
                     }
                 }
             }
         }
 
+        /// Adds the city coverage constraints to the LP.
+        fn add_city_constraints(&mut self, cities: HashSet<Point>) {
+            for c in cities {
+                let coverage = Point::points_within_radius(c, self.r_s, self.dim);
+                let mut sum = Expression::with_capacity(coverage.len());
+                for point in coverage {
+                    sum += self.z[point.x as usize][point.y as usize];
+                }
+                self.constraints.push(constraint!(sum >= 1));
+            }
+        }
 
-        fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>) -> GridProblem {
+
+        /// Creates a new GridProblem instance.
+        pub fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>) -> GridProblem {
+            
             let mut lp = GridProblem {
                 vars: variables![],
                 constraints: vec![],
+                z: vec![],
                 dim,
                 r_s,
                 r_p,
@@ -366,15 +405,19 @@ mod solver {
 
             // add variables for each tower
             let dummy = lp.add_tower_variable(Point::new(-12345, -12345));
-            let mut z = vec![vec![dummy; dim.into()]; dim.into()];
+            lp.z = vec![vec![dummy; dim.into()]; dim.into()];
             for i in 0..dim {
                 for j in 0..dim {
                     let tower = Point::new(i as i32, j as i32);
-                    z[i as usize][j as usize] = lp.add_tower_variable(tower);
+                    lp.z[i as usize][j as usize] = lp.add_tower_variable(tower);
                 }
             }
 
-            lp.add_penalty_variables(z);
+            // add penalty variables
+            lp.add_penalty_variables();
+
+            // add city constraints
+            lp.add_city_constraints(cities);
 
 
             // let variables: Vec<_> = products.into_iter().map(|p| pb.add(p)).collect();
@@ -386,13 +429,27 @@ mod solver {
         }
 
         /// Assumes everything (variables, constraints) has been added already
-        fn solve(self) -> impl Solution {
-            self.vars
-                .minimise(self.total_penalty)
-                .using(default_solver)
-                .solve()
-                .unwrap()
+        fn solution(self) -> impl Solution {
+            let mut v = self.vars.minimise(self.total_penalty).using(default_solver);
+            for c in self.constraints {
+                v = v.with(c);
+            }
+            v.solve().unwrap()
         }
         
+        pub fn tower_solution(self) -> HashSet<Point> {
+            const TOL: f64 = 1e-6;
+            let solution = self.solution();
+            let mut result = HashSet::new();
+            for i in 0..(self.dim as usize) {
+                for j in 0..(self.dim as usize) {
+                    if (solution.value(self.z[i][j]) - 1.).abs() < TOL {
+                        result.insert(Point::new(i as i32, j as i32));
+                    }
+                }
+            }
+            result
+        }
+
     }
 }
