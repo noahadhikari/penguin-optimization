@@ -382,24 +382,28 @@ mod lp_solver {
         /// Adds penalty variables using big-M constraints.
         fn add_penalty_variables_big_m(&mut self) {
             // p_ij for a given ij will be 0 if z_ij is 0 (tower not there)
+
             // and if z_ij is 1 (tower there) then p_ij will be sum of all the z_ij within penalty radius of ij.
 
+
+
             // how to formulate with lp constraints?
+            // https://math.stackexchange.com/questions/2500415/how-to-write-if-else-statement-in-linear-programming
+
 
             // p_ij = z_ij * (sum(z_kl))
             //     = z_ij and z_k1l1 + z_ij and z_k1l2 + z_ij and z_k2l1 + z_ij and z_k2l2 + ...
 
 
-            // heres the good stuff
-
+            // if a > b then c = d else c = e.
             // a = z_ij, b = 0, c = p_ij, d = sum kl, e = 0
+
 
             // z_ij > 0 iff delta = 1
 
             // z_ij >= -M(1-delta)
             // z_ij <= M*delta
             // delta is binary
-
 
             // delta = 1 implies p_ij = sum(z_kl in penalty radius of ij)
             // delta = 0 implies p_ij = 0
@@ -431,12 +435,114 @@ mod lp_solver {
                     self.constraints.push(constraint!(p_ij <= M * delta));
                 }
             }
+
+        }
+
+        /// Adds penalty variables using a leaky-relu function.
+        fn add_penalty_variables_leaky_relu(&mut self) {
+            // !!!!!!!!!!
+            // LEAKY RELU
+            // !!!!!!!!!!
+
+            // if (a > b and x > y) then c = d else c = e.
+
+            // alternatively
+            // if (a>b) then
+            //     if (x > y) then
+            //         s = d
+            //     else
+            //         s = e
+                
+            //     c = s
+
+            // else
+            //     c = f
+
+            // cutoff = w_c = number of towers until bad, say 5
+            // m1 = slope before cutoff, say 1
+            // m2 = slope after cutoff, say 10
+            // s = slack variable for assignment
+
+            // w_ij = number of overlapping towers = sum_kl
+
+            // a = z_ij, b = 0, x = w_ij, y = w_c, c = p_ij, d = m1 * s, e = m2 * s, f = 0
+
+
+            // z_ij > 0 iff delta = 1
+            //     z_ij >= -M(1-delta)
+            //     z_ij <= M*delta
+            //     delta is binary
+
+
+            //     w_ij > w_c iff eps = 1
+            //         w_ij >= w_c - M(1-eps)
+            //         w_ij <= w_c + M*eps
+            //         eps is binary
+
+            //     eps = 1 implies s = m1 * w_ij
+            //     eps = 0 implies s = m2 * w_ij
+
+            //         m1 * w_ij - M (1 - eps) <= s <= m1 * w_ij + M (1 - eps)
+            //         m2 * w_ij - M * eps <= s <= m2 * w_ij + M * eps
+
+
+
+            // delta = 1 implies p_ij = s
+            // delta = 0 implies p_ij = 0
+
+            //     s - M(1 - delta) <= p_ij <= s + M(1 - delta)
+            //     - M * delta <= p_ij <= M * delta
+
+            const M: i32 = 10000000;
+            let w_c = (self.dim as f64) / 10.; // number of towers until bad
+            let m1 = 1; // slope before cutoff
+            let m2 = 10; // slope after cutoff
+
+
+            for i in 0..(self.dim as usize) {
+                for j in 0..(self.dim as usize) {
+                    let p = Point::new(i as i32, j as i32);
+                    let coverage = Point::points_within_radius(p, self.r_p, self.dim);
+                    let p_ij = self.vars.add(variable().integer().name(format!("p_{}_{}", i, j)));
+                    let z_ij = self.z[i][j];
+                    let delta = self.vars.add(variable().binary().name(format!("delta_{}_{}", i, j)));
+                    self.constraints.push(constraint!(z_ij >= -M * (1 - delta)));
+                    self.constraints.push(constraint!(z_ij <= M * delta));
+
+                    let mut w_ij = Expression::with_capacity(coverage.len());
+                    
+                    for point in coverage {
+                        let z_xy = self.z[point.x as usize][point.y as usize];
+                        w_ij.add_mul(1, z_xy);
+                    }
+
+                    let eps = self.vars.add(variable().binary().name(format!("eps_{}_{}", i, j)));
+                    self.constraints.push(constraint!(w_ij.clone() >= w_c - M * (1 - eps)));
+                    self.constraints.push(constraint!(w_ij.clone() <= w_c + M * eps));
+
+                    let s = self.vars.add(variable().integer().name(format!("s_{}_{}", i, j)));
+                    let d = m1 * w_ij.clone();
+                    let e = m2 * w_ij.clone();
+
+                    self.constraints.push(constraint!(d.clone() - M * (1 - eps) <= s));
+                    self.constraints.push(constraint!(s <= d.clone() + M * (1 - eps)));
+                    self.constraints.push(constraint!(e.clone() - M * eps <= s));
+                    self.constraints.push(constraint!(s <= e.clone() + M * eps));
+
+                    self.constraints.push(constraint!(s - M * (1 - delta) <= p_ij));
+                    self.constraints.push(constraint!(p_ij <= s + M * (1 - delta)));
+
+                    self.constraints.push(constraint!(-M * delta <= p_ij));
+                    self.constraints.push(constraint!(p_ij <= M * delta));
+                }
+            }
         }
 
         /// Adds the penalty variables p_ij to the LP.
         fn add_penalty_variables(&mut self) {
-            // self.add_penalty_variables_ijkl();
-            self.add_penalty_variables_big_m();
+            // self.add_penalty_variables_ijkl(); //more optimal but hella slow. maybe consider for small inputs but that's it.
+            // self.add_penalty_variables_leaky_relu(); // a balance between the two, for medium inputs. could use tuning.
+            self.add_penalty_variables_big_m(); // for large inputs; runs quickly and gives decent savings.
         }
 
         /// Adds the city coverage constraints to the LP.

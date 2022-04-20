@@ -12,8 +12,8 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/medium.in";
-    const OUTPUT_PATH: &str = "./outputs/medium.out";
+    const INPUT_PATH: &str = "./inputs/large.in";
+    const OUTPUT_PATH: &str = "./outputs/large.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
 
     // place_at_cities(&mut grid);
