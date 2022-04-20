@@ -207,7 +207,7 @@ impl Grid {
 
 
     /// Destructively (changes the grid's tower configuration) solves the Grid using the LP.
-    pub fn lp_solve(&mut self) {
+    pub fn lp_solve(&mut self, max_time: u32) {
         assert!(self.towers.len() == 0, "Cannot solve a grid with towers already placed.");
         use lp_solver::GridProblem;
         
@@ -220,7 +220,8 @@ impl Grid {
             self.dimension, 
             self.service_radius, 
             self.penalty_radius, 
-            city_keys
+            city_keys,
+            max_time
         );
 
         for t in problem.tower_solution() {
@@ -335,7 +336,7 @@ mod lp_solver {
     use super::*;
     use good_lp::variable::ProblemVariables;
     use good_lp::constraint::Constraint;
-    use good_lp::{default_solver, constraint, variable, variables, Expression, Solution, SolverModel, Variable};
+    use good_lp::{coin_cbc, constraint, variable, variables, Expression, Solution, SolverModel, Variable};
 
     pub struct GridProblem {
         vars: ProblemVariables,
@@ -345,6 +346,7 @@ mod lp_solver {
         dim: u8,
         r_s: u8,
         r_p: u8,
+        max_time: u32, // in seconds
     }
 
     impl GridProblem {
@@ -391,7 +393,7 @@ mod lp_solver {
 
 
         /// Creates a new GridProblem instance.
-        pub fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>) -> GridProblem {
+        pub fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32) -> GridProblem {
             
             let mut lp = GridProblem {
                 vars: variables![],
@@ -401,6 +403,7 @@ mod lp_solver {
                 r_s,
                 r_p,
                 total_penalty: 2147483647.into(),
+                max_time
             };
 
             // add variables for each tower
@@ -435,11 +438,12 @@ mod lp_solver {
             // }
             // println!("{:#?}", self.constraints);
 
-            let mut model = self.vars.minimise(self.total_penalty).using(default_solver);
+            let mut model = self.vars.minimise(self.total_penalty).using(coin_cbc);
             for c in self.constraints {
                 model = model.with(c);
             }
             
+            model.set_parameter("sec", &self.max_time.to_string());
             model.solve().unwrap()
         }
         

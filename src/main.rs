@@ -12,13 +12,14 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/small.in";
-    const OUTPUT_PATH: &str = "./outputs/small.out";
+    const INPUT_PATH: &str = "./inputs/medium.in";
+    const OUTPUT_PATH: &str = "./outputs/medium.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
 
     // place_at_cities(&mut grid);
 
-    grid.lp_solve();
+    const CUTOFF_TIME: u32 = 500000; //max time in seconds
+    grid.lp_solve(CUTOFF_TIME);
 
     write_sol(&grid, OUTPUT_PATH);
     println!("Valid: {}", grid.is_valid());
