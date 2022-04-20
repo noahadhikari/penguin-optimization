@@ -444,6 +444,8 @@ mod lp_solver {
             }
             
             model.set_parameter("sec", &self.max_time.to_string());
+            model.set_parameter("log", &2.to_string()); // uncomment for less output
+            model.set_parameter("cutoff", &2000.to_string());
             model.solve().unwrap()
         }
         
