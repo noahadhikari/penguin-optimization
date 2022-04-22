@@ -1,9 +1,10 @@
 // Used to ignore unused code warnings.
 #![allow(dead_code)]
 
-mod grid;
 
+mod grid;
 use grid::Grid;
+
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -11,14 +12,18 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./troll_submit/medium.in";
-    const OUTPUT_PATH: &str = "./outputs/medium.out";
+    const INPUT_PATH: &str = "./inputs/small.in";
+    const OUTPUT_PATH: &str = "./outputs/small.out";
     let mut grid = get_grid(INPUT_PATH).unwrap();
 
-    place_at_cities(&mut grid);
+    // place_at_cities(&mut grid);
 
-    println!("{}", grid);
+    const CUTOFF_TIME: u32 = 300; //max time in seconds
+    grid.lp_solve(CUTOFF_TIME);
+
     write_sol(&grid, OUTPUT_PATH);
+    println!("Valid: {}", grid.is_valid());
+    println!("{}", grid);
 }
 
 // Algorithms
@@ -28,6 +33,7 @@ fn main() {
 fn place_at_cities(grid: &mut Grid) {
     let cities = grid.get_cities().clone();
     let city_points = cities.keys();
+    println!("{:?}", city_points);
     for point in city_points {
         let covered = grid.get_cities().get(point).unwrap();
         if covered.len() > 0 {

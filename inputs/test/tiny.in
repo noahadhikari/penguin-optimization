@@ -1,20 +1,17 @@
 # Tiny instance.
 # Number of cities
-4
+6
 # Grid size, 10
 10
 # Rs, 3
 3
-# Rp, 4
-4
+# Rp, 6
+6
 # Coordinates for cities.
 1 2
 3 4
 # RANDOM COMMENT
 5 6
 7 8
-
-SHOULDNT
-ERROR
-NOW
-AHDUF
+7 1
+6 5
