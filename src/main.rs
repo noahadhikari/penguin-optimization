@@ -10,20 +10,26 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::Write;
 use std::io::{self, BufReader};
+use std::fs;
+use std::path::Path;
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/large.in";
-    const OUTPUT_PATH: &str = "./outputs/large.out";
-    let mut grid = get_grid(INPUT_PATH).unwrap();
+		const CUTOFF_TIME: u32 = 500000; //max time in seconds
+		let paths = fs::read_dir("./inputs/small").unwrap();
+		
+		for path in paths {
+			let real_path = path.unwrap().path();
+			// ie: 001
+			let test_number = real_path.file_stem().unwrap().to_str().unwrap();
+			let INPUT_PATH = real_path.to_str().unwrap();
+			let OUTPUT_PATH = "./outputs/".to_string() + "small/" + test_number + ".out";
 
-    // place_at_cities(&mut grid);
+			let mut grid = get_grid(INPUT_PATH).unwrap();
 
-    const CUTOFF_TIME: u32 = 500000; //max time in seconds
-    grid.lp_solve(CUTOFF_TIME);
+			grid.lp_solve(CUTOFF_TIME);
 
-    write_sol(&grid, OUTPUT_PATH);
-    println!("Valid: {}", grid.is_valid());
-    println!("{}", grid);
+			write_sol(&grid, &OUTPUT_PATH);
+		}	
 }
 
 // Algorithms
