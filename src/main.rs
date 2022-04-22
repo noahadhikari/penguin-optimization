@@ -60,7 +60,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
     let mut num_cities: i32 = -1;
     for line in reader.lines() {
         if let Ok(l) = line {
-            let vec: Vec<&str> = l.split(' ').collect();
+            let vec: Vec<&str> = l.split_whitespace().collect();
             let first_val: &str = vec.get(0).unwrap();
             if first_val.eq("#") {
                 continue;
