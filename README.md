@@ -1,4 +1,73 @@
-# Spring 2022 CS170 Project Skeleton
+# penguin-project
+
+- [penguin-project](#penguin-project)
+- [Rust Instructions](#rust-instructions)
+  - [Requirements](#requirements)
+  - [Usage](#usage)
+  - [Directory Structure](#directory-structure)
+  - [Development](#development)
+  - [Crates](#crates)
+- [Python Instructions](#python-instructions)
+  - [Requirements](#requirements-1)
+  - [Usage](#usage-1)
+    - [Generating instances](#generating-instances)
+    - [Solving](#solving)
+    - [Merging](#merging)
+    - [Visualizing Instances](#visualizing-instances)
+
+
+# Rust Instructions
+
+## Requirements
+
+It is recommended to use Linux or [WSL](https://docs.microsoft.com/en-us/learn/modules/get-started-with-windows-subsystem-for-linux/) since we use [coin-or cbc](https://www.coin-or.org/Cbc/), which is easer to setup in linux.
+
+First install rust by using `rustup` by following the [instructions on the website](https://www.rust-lang.org/tools/install
+), by running
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Next install `coin-or cbc`, the LP solver we currently use by either running the below (for linux) or following the [instructions on their github](https://github.com/coin-or/Cbc)
+```bash
+sudo apt-get install coinor-cbc coinor-libcbc-dev
+```
+
+If (when) we move over to the `HiGHS` solver, you will need a C compiler.
+
+## Usage
+
+In the root of the directory, run
+```bash
+cargo run --release
+```
+TODO: create and define cli arguments
+
+
+## Directory Structure
+
+
+
+## Development
+
+A github workflow runs rustfmt whenever pushing to main or creating a pull request to main but its a good idea to install and run:
+```bash
+rustup component add rustfmt
+cargo fmt
+```
+
+
+## Crates
+
+In addition to the above, we used the following crates/libraries:
+| | | | 
+|-|-|-|
+|`good_lp`| [Github](https://github.com/rust-or/good_lp) | [Documentation](https://docs.rs/good_lp/1.3.2/good_lp/) |
+|`rustfmt-check`| [Github](https://github.com/mbrobbel/rustfmt-check) | |
+
+
+#
+# Python Instructions
 
 ## Requirements
 
@@ -21,7 +90,7 @@ After you have filled in those functions, you can run `make generate` in the
 
 To run unit tests, run `make check`.
 
-## Solving
+### Solving
 
 We've created a solver skeleton at [`python/solve.py`](python/solve.py).
 ```bash
@@ -40,13 +109,13 @@ python3 python/solve_all.py inputs outputs
 in the root directory.
 
 
-## Merging
+### Merging
 
 To merge multiple output folders, taking the best solutions, see
 [`python/merge.py`](python/merge.py).
 
 
-## Visualizing Instances
+### Visualizing Instances
 
 To visualize problem instances, run `python3 visualize.py`, passing  in the
 path to your `.in` file as the first argument (or `-` to read from standard
