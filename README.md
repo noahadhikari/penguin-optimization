@@ -6,7 +6,7 @@
   - [Usage](#usage)
   - [Directory Structure](#directory-structure)
   - [Development](#development)
-  - [Crates](#crates)
+  - [Documentation](#documentation)
 - [Python Instructions](#python-instructions)
   - [Requirements](#requirements-1)
   - [Usage](#usage-1)
@@ -57,13 +57,14 @@ cargo fmt
 ```
 
 
-## Crates
+## Documentation
 
 In addition to the above, we used the following crates/libraries:
 | | | | 
 |-|-|-|
 |`good_lp`| [Github](https://github.com/rust-or/good_lp) | [Documentation](https://docs.rs/good_lp/1.3.2/good_lp/) |
-|`rustfmt-check`| [Github](https://github.com/mbrobbel/rustfmt-check) | |
+|`rustfmt-check`| [Github](https://github.com/mbrobbel/rustfmt-check) | [Actions Marketplace](https://github.com/marketplace/actions/rust-rustfmt-check) |
+|`rustfmt` | [Github](https://github.com/rust-lang/rustfmt) | [Toml Docs](https://rust-lang.github.io/rustfmt) |
 
 
 #
