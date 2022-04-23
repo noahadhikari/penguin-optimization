@@ -212,10 +212,7 @@ impl Grid {
     }
 
     /// Randomly solves the Grid using LP for the given number of iterations and takes the best solution.
-    pub fn random_lp_solve(&mut self, max_time: u32, iterations: u32) {
-        assert!(iterations > 0, "Must have at least one iteration.");
-        let mut best_penalty = f64::INFINITY;
-        let mut best_towers = self.towers.clone();
+    pub fn random_lp_solve(&mut self, max_time: u32) -> f64 {
         use crate::lp::GridProblem;
 
         let mut city_keys = HashSet::new();
@@ -224,12 +221,8 @@ impl Grid {
         }
         
         use rand::{thread_rng, Rng};
-        use std::{thread, time};
         let mut rng = thread_rng();
-        for i in 0..iterations {
             self.remove_all_towers();
-            // println!("{}", i);
-            // println!("{}", r);
             let problem = GridProblem::new_randomized(
                 self.dimension, 
                 self.service_radius, 
@@ -239,28 +232,10 @@ impl Grid {
                 rng.gen_range(0..10000000)
             );
             let tower_soln = problem.tower_solution();
-            // println!("{:?}", tower_soln);
             for t in tower_soln {
                 self.add_tower(t.x, t.y);
             };
-            // println!("towers: {:?}", self.towers);
-            println!("penalty: {}", self.penalty());
-            // println!("{}", self);
-            let p = self.penalty();
-            if p < best_penalty {
-                println!("Iteration {} of {}, New best penalty: {}", i, iterations, p);
-                // println!("New best towers: {:?}", self.towers);
-                best_penalty = p;
-                best_towers = self.towers.clone();
-            }
-        }
-
-        // println!("{:?}", best_towers);
-        // println!("{:?}", best_penalty);
-        self.remove_all_towers();
-        for (t, _) in best_towers {
-            self.add_tower(t.x, t.y);
-        }
+			 self.penalty()
     }
 
     /// Destructively (changes the grid's tower configuration) solves the Grid using the LP.

@@ -47,13 +47,29 @@ fn solve_one_input() {
 fn solve_one_randomized() {
     const INPUT_PATH: &str = "./inputs/test/small.in";
     const OUTPUT_PATH: &str = "./outputs/test/small_rand.out";
-    let mut grid = get_grid(INPUT_PATH).unwrap();
     const CUTOFF_TIME: u32 = 60; //max time in seconds
-    const ITERATIONS: u32 = 1000;
-    grid.random_lp_solve(CUTOFF_TIME, ITERATIONS);
+    const ITERATIONS: u32 = 10000;
 
-    write_sol(&grid, OUTPUT_PATH);
-    // println!("Valid: {}", grid.is_valid());
+    let mut best_penalty_so_far = f64::INFINITY;
+    let mut best_grid_so_far = Grid::new(0, 0, 0);
+    for i in 0..ITERATIONS {
+        let mut grid = get_grid(INPUT_PATH).unwrap();
+        let p = grid.random_lp_solve(CUTOFF_TIME);
+        println!("{} penalty: {}", i, p);
+        if p < best_penalty_so_far {
+            best_penalty_so_far = best_penalty_so_far.min(p);
+            best_grid_so_far = grid;
+        }
+
+        // Print out best_so_far every 50
+        if i % 50 == 0 {
+            println!("Best so far: {}", best_penalty_so_far);
+        }
+    }
+    println!("Best: {}", best_penalty_so_far);
+    // write_sol(&best_grid_so_far, OUTPUT_PATH);
+
+    // println!("Valid: {}", best_grid_so_far.is_valid());
     // println!("{}", grid);
 }
 
