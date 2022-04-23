@@ -10,20 +10,27 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::Write;
 use std::io::{self, BufReader};
+use std::fs;
+
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/small.in";
-    const OUTPUT_PATH: &str = "./outputs/small.out";
-    let mut grid = get_grid(INPUT_PATH).unwrap();
+	const CUTOFF_TIME: u32 = 500000; //max time in seconds
+	
+	let paths = fs::read_dir("./inputs/small").unwrap();
 
-    // place_at_cities(&mut grid);
+	for path in paths {
+		let real_path = path.unwrap().path();
+		// ie: 001
+		let test_number = real_path.file_stem().unwrap().to_str().unwrap();
+		let input_path = real_path.to_str().unwrap();
+		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
 
-    const CUTOFF_TIME: u32 = 300; //max time in seconds
-    grid.lp_solve(CUTOFF_TIME);
+		let mut grid = get_grid(input_path).unwrap();
 
-    write_sol(&grid, OUTPUT_PATH);
-    println!("Valid: {}", grid.is_valid());
-    println!("{}", grid);
+		grid.lp_solve(CUTOFF_TIME);
+
+		write_sol(&grid, &output_path);
+	}	
 }
 
 // Algorithms
@@ -54,7 +61,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
     let mut num_cities: i32 = -1;
     for line in reader.lines() {
         if let Ok(l) = line {
-            let vec: Vec<&str> = l.split(' ').collect();
+            let vec: Vec<&str> = l.split_whitespace().collect();
             let first_val: &str = vec.get(0).unwrap();
             if first_val.eq("#") {
                 continue;
