@@ -1,10 +1,10 @@
 // Used to ignore unused code warnings.
 #![allow(dead_code)]
 
-
 mod grid;
 use grid::Grid;
 
+use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -12,18 +12,23 @@ use std::io::Write;
 use std::io::{self, BufReader};
 
 fn main() {
-    const INPUT_PATH: &str = "./inputs/small/002.in";
-    const OUTPUT_PATH: &str = "./outputs/small/002.out";
-    let mut grid = get_grid(INPUT_PATH).unwrap();
+    const CUTOFF_TIME: u32 = 500000; //max time in seconds
 
-    // place_at_cities(&mut grid);
+    let paths = fs::read_dir("./inputs/small").unwrap();
 
-    const CUTOFF_TIME: u32 = 1200; //max time in seconds
-    grid.lp_solve(CUTOFF_TIME);
+    for path in paths {
+        let real_path = path.unwrap().path();
+        // ie: 001
+        let test_number = real_path.file_stem().unwrap().to_str().unwrap();
+        let input_path = real_path.to_str().unwrap();
+        let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
 
-    write_sol(&grid, OUTPUT_PATH);
-    println!("Valid: {}", grid.is_valid());
-    println!("{}", grid);
+        let mut grid = get_grid(input_path).unwrap();
+
+        grid.lp_solve(CUTOFF_TIME);
+
+        write_sol(&grid, &output_path);
+    }
 }
 
 // Algorithms
@@ -54,7 +59,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
     let mut num_cities: i32 = -1;
     for line in reader.lines() {
         if let Ok(l) = line {
-            let vec: Vec<&str> = l.split(' ').collect();
+            let vec: Vec<&str> = l.split_whitespace().collect();
             let first_val: &str = vec.get(0).unwrap();
             if first_val.eq("#") {
                 continue;
@@ -69,7 +74,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
                         let x = first_val.parse::<i32>().unwrap();
                         let y = vec.get(1).unwrap().parse::<i32>().unwrap();
                         g.add_city(x, y);
-                    } 
+                    }
                     // else {
                     //     println!("Past all cities");
                     // }
