@@ -1,6 +1,9 @@
 [package]
 name = "penguin-project"
 version = "0.1.0"
+authors = ["Daniel Endraws <daniel.endraws@berkeley.edu>", "Noah Adhikari <noahadhikari@berkeley.edu", "Meshan Khosla <mkhosla@berkeley.edu>"]
+description="CS 170 - Solver for penguin problem"
+readme="README.md"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
