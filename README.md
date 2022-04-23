@@ -55,6 +55,12 @@ A github workflow runs rustfmt whenever pushing to main or creating a pull reque
 rustup component add rustfmt
 cargo fmt
 ```
+On the Nightly toolchain (to support features on the `rustfmt.toml`):
+```bash
+rustup toolchain install nightly
+rustup component add rustfmt --toolchain nightly
+cargo +nightly fmt
+```
 
 
 ## Documentation
