@@ -337,7 +337,7 @@ mod lp_solver {
     use good_lp::variable::ProblemVariables;
     use good_lp::constraint::Constraint;
     use good_lp::{constraint, variable, variables, Expression, Solution, SolverModel, Variable};
-    // use good_lp::solvers::highs;
+    use good_lp::solvers::lp_solvers::LpSolver;
     use good_lp::{coin_cbc};
 
     pub struct GridProblem {
@@ -663,18 +663,14 @@ mod lp_solver {
 
         /// Assumes everything (variables, constraints) has been added already
         fn solution(self) -> impl Solution {
-            // for (v, d) in self.vars.iter_variables_with_def() {
-            //     println!("{:?} = {:?}", v, d);
-            // }
-            // println!("{:#?}", self.constraints);
-
             let mut model = self.vars.minimise(self.total_penalty).using(coin_cbc);
             for c in self.constraints {
                 model = model.with(c);
             }
             
-            // model.set_parameter("heur", "on");
-            // model.set_parameter("cuts", "on");
+            model.set_parameter("heur", "on");
+            model.set_parameter("cuts", "on");
+            model.set_parameter("threads", "1"); //change to number of threads that you want
             // model.set_parameter("maxN", "300");
             // model.set_parameter("cutoff", "20");
             // // model.set_parameter("node", "fewest");
