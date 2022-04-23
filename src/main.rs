@@ -44,9 +44,23 @@ fn solve_one_input() {
     println!("{}", grid);
 }
 
+fn solve_one_randomized() {
+    const INPUT_PATH: &str = "./inputs/test/small.in";
+    const OUTPUT_PATH: &str = "./outputs/test/small_rand.out";
+    let mut grid = get_grid(INPUT_PATH).unwrap();
+    const CUTOFF_TIME: u32 = 60; //max time in seconds
+    const ITERATIONS: u32 = 1000;
+    grid.random_lp_solve(CUTOFF_TIME, ITERATIONS);
+
+    write_sol(&grid, OUTPUT_PATH);
+    // println!("Valid: {}", grid.is_valid());
+    // println!("{}", grid);
+}
+
 fn main() {
     // solve_all_inputs();
-    solve_one_input();
+    // solve_one_input();
+    solve_one_randomized();
 }
 
 // Algorithms
