@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 mod grid;
+mod lp;
 use grid::Grid;
 
 use std::fs;
@@ -11,7 +12,7 @@ use std::io::prelude::*;
 use std::io::Write;
 use std::io::{self, BufReader};
 
-fn main() {
+fn solve_all_inputs() {
     const CUTOFF_TIME: u32 = 500000; //max time in seconds
 
     let paths = fs::read_dir("./inputs/small").unwrap();
@@ -29,6 +30,23 @@ fn main() {
 
         write_sol(&grid, &output_path);
     }
+}
+
+fn solve_one_input() {
+    const INPUT_PATH: &str = "./inputs/test/tiny.in";
+    const OUTPUT_PATH: &str = "./outputs/test/tiny.out";
+    let mut grid = get_grid(INPUT_PATH).unwrap();
+    const CUTOFF_TIME: u32 = 3600; //max time in seconds
+    grid.lp_solve(CUTOFF_TIME);
+
+    write_sol(&grid, OUTPUT_PATH);
+    // println!("Valid: {}", grid.is_valid());
+    println!("{}", grid);
+}
+
+fn main() {
+    // solve_all_inputs();
+    solve_one_input();
 }
 
 // Algorithms
