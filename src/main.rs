@@ -1,36 +1,34 @@
 // Used to ignore unused code warnings.
 #![allow(dead_code)]
 
-
 mod grid;
 use grid::Grid;
 
+use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::Write;
 use std::io::{self, BufReader};
-use std::fs;
-
 
 fn main() {
-	const CUTOFF_TIME: u32 = 500000; //max time in seconds
-	
-	let paths = fs::read_dir("./inputs/small").unwrap();
+    const CUTOFF_TIME: u32 = 500000; //max time in seconds
 
-	for path in paths {
-		let real_path = path.unwrap().path();
-		// ie: 001
-		let test_number = real_path.file_stem().unwrap().to_str().unwrap();
-		let input_path = real_path.to_str().unwrap();
-		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
+    let paths = fs::read_dir("./inputs/small").unwrap();
 
-		let mut grid = get_grid(input_path).unwrap();
+    for path in paths {
+        let real_path = path.unwrap().path();
+        // ie: 001
+        let test_number = real_path.file_stem().unwrap().to_str().unwrap();
+        let input_path = real_path.to_str().unwrap();
+        let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
 
-		grid.lp_solve(CUTOFF_TIME);
+        let mut grid = get_grid(input_path).unwrap();
 
-		write_sol(&grid, &output_path);
-	}	
+        grid.lp_solve(CUTOFF_TIME);
+
+        write_sol(&grid, &output_path);
+    }
 }
 
 // Algorithms
@@ -76,7 +74,7 @@ fn get_grid(path: &str) -> io::Result<Grid> {
                         let x = first_val.parse::<i32>().unwrap();
                         let y = vec.get(1).unwrap().parse::<i32>().unwrap();
                         g.add_city(x, y);
-                    } 
+                    }
                     // else {
                     //     println!("Past all cities");
                     // }
