@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 cargo-debug = "0.3.0"
 good_lp = {version = "1.3.2", features = ["coin_cbc", "lp-solvers"]}
+stopwatch = "0.0.7"
 rand = "0.8.5"
 # lp-solvers = "0.0.4"
 # minilp = "0.2.2"
