@@ -13,6 +13,7 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::io::Write;
 use std::io::{self, BufReader};
+use std::path::Path;
 use stopwatch::Stopwatch;
 
 fn solve_all_inputs() {
@@ -72,11 +73,10 @@ fn solve_all_randomized() {
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
 		let output_path = "./outputs/".to_string() + "medium/" + test_number + ".out";
-		solve_one_randomized(input_path, &output_path, 300);
+		solve_one_randomized(input_path, &output_path, 10);
 		
 		i += 1;
 	}
-
 }
 
 fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64) {
@@ -159,9 +159,6 @@ fn get_grid(path: &str) -> io::Result<Grid> {
                         let y = vec.get(1).unwrap().parse::<i32>().unwrap();
                         g.add_city(x, y);
                     }
-                    // else {
-                    //     println!("Past all cities");
-                    // }
                 }
             }
             i += 1;
@@ -171,6 +168,20 @@ fn get_grid(path: &str) -> io::Result<Grid> {
 }
 
 fn write_sol(grid: &Grid, path: &str) {
+		// Only overwrite if solution is better than what we currently have
+		if Path::new(path).is_file() {
+			let file = File::open(path).unwrap();
+			let reader = BufReader::new(file);
+			let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
+			let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
+			let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
+			let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
+
+			if grid.penalty() >= existing_penalty {
+				return;
+			}
+		}
+
     let data = grid.output();
     let mut f = OpenOptions::new()
         .write(true)
