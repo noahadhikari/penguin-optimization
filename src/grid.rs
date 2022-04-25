@@ -91,9 +91,9 @@ impl Grid {
 		}
 	}
 
-    pub fn new_dummy_grid() -> Grid {
-        Grid::new(0, 0, 0)
-    }
+	pub fn new_dummy_grid() -> Grid {
+		Grid::new(0, 0, 0)
+	}
 
 	/// Returns the total penalty P of this Grid.
 	pub fn penalty(&self) -> f64 {
@@ -225,20 +225,20 @@ impl Grid {
 		&self.cities
 	}
 
-    pub fn get_towers_ref(&self) -> &HashMap<Point, HashSet<Point>> {
-        &self.towers
-    }
+	pub fn get_towers_ref(&self) -> &HashMap<Point, HashSet<Point>> {
+		&self.towers
+	}
 
-    pub fn replace_all_towers(&mut self, towers: HashMap<Point, HashSet<Point>>) {
-        if self.towers == towers {
-            return;
-        }
-        self.remove_all_towers();
-        for (point, _) in towers.iter() {
-            self.add_tower(point.x, point.y);
-        }
+	pub fn replace_all_towers(&mut self, towers: HashMap<Point, HashSet<Point>>) {
+		if self.towers == towers {
+			return;
+		}
+		self.remove_all_towers();
+		for (point, _) in towers.iter() {
+			self.add_tower(point.x, point.y);
+		}
+	}
 
-    }
 	pub fn set_service_radius(&mut self, serv_radius: u8) {
 		self.service_radius = serv_radius;
 	}
