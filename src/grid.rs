@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 // A Grid which we place towers and cities on.
-// #[derive(Debug)]
+#[derive(Clone)]
 pub struct Grid {
 	dimension:      u8,
 	service_radius: u8,
@@ -93,8 +93,8 @@ impl Grid {
 	pub fn penalty(&self) -> f64 {
 		let mut penalty = 0.0;
 		for penalized in self.towers.values() {
-			let w_j = penalized.len();
-			penalty += (0.17 * w_j as f64).exp();
+			let w_j = penalized.len() as f64;
+			penalty += (0.17 * w_j).exp();
 		}
 		170.0 * penalty
 	}
@@ -229,6 +229,41 @@ impl Grid {
 
 	pub fn set_dimension(&mut self, dim: u8) {
 		self.dimension = dim;
+	}
+
+	pub fn remove_all_towers(&mut self) {
+		self.towers.clear();
+		for (_, covered) in self.cities.iter_mut() {
+			covered.clear();
+		}
+	}
+
+	/// Randomly solves the Grid using LP for the given number of iterations and
+	/// takes the best solution.
+	pub fn random_lp_solve(&mut self, max_time: u32) -> f64 {
+		use crate::lp::GridProblem;
+
+		let mut city_keys = HashSet::new();
+		for (&c, _) in self.cities.iter() {
+			city_keys.insert(c);
+		}
+
+		use rand::{thread_rng, Rng};
+		let mut rng = thread_rng();
+		self.remove_all_towers();
+		let problem = GridProblem::new_randomized(
+			self.dimension,
+			self.service_radius,
+			self.penalty_radius,
+			city_keys.clone(),
+			max_time,
+			rng.gen_range(0..10000000),
+		);
+		let tower_soln = problem.tower_solution();
+		for t in tower_soln {
+			self.add_tower(t.x, t.y);
+		}
+		self.penalty()
 	}
 
 	/// Destructively (changes the grid's tower configuration) solves the Grid
