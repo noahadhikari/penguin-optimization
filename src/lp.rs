@@ -47,7 +47,7 @@ impl GridProblem {
 	/// Adds a new tower variable t_ij at the given point (i, j) to the LP.
 	fn add_tower_variable(&mut self, tower: Point) -> Variable {
 		// let name = format!("t_{}_{}", tower.x, tower.y);
-		let is_tower = self.vars.add(variable().binary());//.name(name));
+		let is_tower = self.vars.add(variable().binary()); //.name(name));
 		is_tower
 	}
 
@@ -62,7 +62,7 @@ impl GridProblem {
 					let l = point.y as usize;
 
 					// let name = format!("p_{}_{}_{}_{}", i, j, k, l);
-					let p_ijkl = self.vars.add(variable().binary());//.name(name));
+					let p_ijkl = self.vars.add(variable().binary()); //.name(name));
 					self.constraints.push(constraint!(p_ijkl <= self.t[i][j]));
 					self.constraints.push(constraint!(p_ijkl <= self.t[k][l]));
 					self
@@ -87,7 +87,7 @@ impl GridProblem {
 		}
 	}
 
-    /// Creates a new grid for randomization solving.
+	/// Creates a new grid for randomization solving.
 	pub fn new_randomized(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32, seed: u32) -> GridProblem {
 		let mut lp = GridProblem {
 			vars: variables![],
@@ -113,7 +113,7 @@ impl GridProblem {
 			}
 		}
 
-        // ignores penalty constraints for randomization
+		// ignores penalty constraints for randomization
 
 		// add city constraints
 		lp.add_city_constraints(cities);

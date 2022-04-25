@@ -4,19 +4,16 @@
 mod grid;
 mod lp;
 
-use grid::Grid;
-
-use rand::{thread_rng, Rng};
-
 use std::collections::HashMap;
 use std::fmt::Error;
-use std::fs;
 use std::fs::{DirEntry, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
-use std::u32;
+use std::{fs, u32};
 
+use grid::Grid;
+use rand::{thread_rng, Rng};
 use stopwatch::Stopwatch;
 
 fn solve_all_inputs() {
@@ -87,15 +84,15 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
-    
-    let mut rng = thread_rng();
+
+	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	let mut grid = get_grid(input_path).unwrap();
-    let mut best_towers_so_far = HashMap::new(); // Need a way to move this out
-    let sw = Stopwatch::start_new();
+	let mut best_towers_so_far = HashMap::new(); // Need a way to move this out
+	let sw = Stopwatch::start_new();
 	// For every file:
-    
-    let mut i = 0;
+
+	let mut i = 0;
 	while sw.elapsed().as_secs() < secs_per_input {
 		// 5 mins
 		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
@@ -109,11 +106,11 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 		// if sw.elapsed().as_secs() % 10 == 0 {
 		// 	println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
 		// }
-        i += 1;
+		i += 1;
 	}
 	println!("Best: {}", best_penalty_so_far);
 	// println!("Valid: {}", best_grid_so_far.is_valid());
-    grid.replace_all_towers(best_towers_so_far);
+	grid.replace_all_towers(best_towers_so_far);
 	write_sol(&grid, output_path);
 }
 
