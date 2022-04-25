@@ -81,27 +81,32 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
+    use rand::{thread_rng, Rng};
+    use std::u32::MAX;
+    let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	let mut best_grid_so_far = Grid::new(0, 0, 0);
 	let sw = Stopwatch::start_new();
 	// For every file:
+    // let mut i = 0;
 	while sw.elapsed().as_secs() < secs_per_input {
 		// 5 mins
 		let mut grid = get_grid(input_path).unwrap(); // Need a way to move this out
-		let p = grid.random_lp_solve(CUTOFF_TIME);
+		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=MAX));
 		// println!("{} penalty: {}", i, p);
 		if p < best_penalty_so_far {
 			best_penalty_so_far = best_penalty_so_far.min(p);
 			best_grid_so_far = grid;
 		}
 
-		let time = sw.elapsed().as_secs();
-		if sw.elapsed().as_secs() % 10 == 0 {
-			println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
-		}
+		// let time = sw.elapsed().as_secs();
+		// if sw.elapsed().as_secs() % 10 == 0 {
+		// 	println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
+		// }
+        // i += 1;
 	}
 	println!("Best: {}", best_penalty_so_far);
-	println!("Valid: {}", best_grid_so_far.is_valid());
+	// println!("Valid: {}", best_grid_so_far.is_valid());
 	write_sol(&best_grid_so_far, output_path);
 }
 

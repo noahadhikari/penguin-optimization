@@ -240,7 +240,7 @@ impl Grid {
 
 	/// Randomly solves the Grid using LP for the given number of iterations and
 	/// takes the best solution.
-	pub fn random_lp_solve(&mut self, max_time: u32) -> f64 {
+	pub fn random_lp_solve(&mut self, max_time: u32, seed: u32) -> f64 {
 		use crate::lp::GridProblem;
 
 		let mut city_keys = HashSet::new();
@@ -248,16 +248,16 @@ impl Grid {
 			city_keys.insert(c);
 		}
 
-		use rand::{thread_rng, Rng};
-		let mut rng = thread_rng();
+		// use rand::{thread_rng, Rng};
+		// let mut rng = thread_rng();
 		self.remove_all_towers();
 		let problem = GridProblem::new_randomized(
 			self.dimension,
 			self.service_radius,
 			self.penalty_radius,
-			city_keys.clone(),
+			city_keys,
 			max_time,
-			rng.gen_range(0..10000000),
+			seed,
 		);
 		let tower_soln = problem.tower_solution();
 		for t in tower_soln {
