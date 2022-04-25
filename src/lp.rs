@@ -1,3 +1,4 @@
+use crate::point::Point;
 use std::collections::HashSet;
 
 use good_lp::constraint::Constraint;
@@ -27,7 +28,7 @@ use good_lp::{coin_cbc, constraint, variable, variables, Expression, Solution, S
 /// ------------------------------
 ///
 /// total number of variables is on the order of R^2 * d^2.
-use crate::grid::Point;
+
 
 
 pub struct GridProblem {
@@ -88,7 +89,7 @@ impl GridProblem {
 	}
 
 	/// Creates a new grid for randomization solving.
-	pub fn new_randomized(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32, seed: u32) -> GridProblem {
+	pub fn new_randomized(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32, seed: u32) -> Self {
 		let mut lp = GridProblem {
 			vars: variables![],
 			constraints: vec![],
@@ -122,7 +123,7 @@ impl GridProblem {
 	}
 
 	/// Creates and returns a new GridProblem LP.
-	pub fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32) -> GridProblem {
+	pub fn new(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32) -> Self {
 		let mut lp: GridProblem = GridProblem::new_randomized(dim, r_s, r_p, cities, max_time, 69420);
 		lp.console_log = 1;
 		lp.add_penalty_variables();
