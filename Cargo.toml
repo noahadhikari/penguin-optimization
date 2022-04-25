@@ -13,6 +13,8 @@ cargo-debug = "0.3.0"
 good_lp = {version = "1.3.2", features = ["coin_cbc", "lp-solvers"]}
 stopwatch = "0.0.7"
 rand = "0.8.5"
+clap = { version = "3.1.12", features = ["derive"] }
+phf = { version = "0.10", features = ["macros"] }
 # lp-solvers = "0.0.4"
 # minilp = "0.2.2"
 # highs = "1.2.1"

@@ -73,6 +73,8 @@ In addition to the above, we used the following crates/libraries:
 | | | | 
 |-|-|-|
 |`good_lp`| [Github](https://github.com/rust-or/good_lp) | [Documentation](https://docs.rs/good_lp/1.3.2/good_lp/) |
+|`clap`| [Derive Doc](https://github.com/clap-rs/clap/blob/v3.1.12/examples/derive_ref/README.md) | [Derive Tutorial](https://github.com/clap-rs/clap/blob/v3.1.12/examples/tutorial_derive/README.md#validated-values) |
+|`pfh` | [Documentation](https://docs.rs/phf/0.10.1/phf/) ||
 |`rustfmt-check`| [Github](https://github.com/mbrobbel/rustfmt-check) | [Actions Marketplace](https://github.com/marketplace/actions/rust-rustfmt-check) |
 |`rustfmt` | [Github](https://github.com/rust-lang/rustfmt) | [Toml Docs](https://rust-lang.github.io/rustfmt) |
 

@@ -3,15 +3,172 @@
 
 mod grid;
 mod lp;
-use std::fmt::Error;
+use std::collections::{HashSet, HashMap};
 use std::fs;
-use std::fs::{DirEntry, File, OpenOptions};
+use std::fs::{File, OpenOptions};
+use std::hash::Hash;
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use grid::Grid;
 use stopwatch::Stopwatch;
+use clap::{Parser, Subcommand};
+use phf::phf_map;
+
+// Define solver functions
+
+static SOLVERS: phf::Map<&'static str, fn()> = phf_map! {
+	"test" => solve_one_input,
+	"test1" => solve_one_input,
+};
+
+
+// Define command line arguments
+#[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+	#[clap(subcommand)]
+	command: Commands,
+}
+
+
+#[derive(Subcommand)]
+enum Commands {
+	/// List all solvers
+	#[clap(alias = "ls")]
+	List,
+
+	/// Run a solver on several specified inputs
+	#[clap(arg_required_else_help = true)]
+	Solve {
+		/// Solver to use 
+		#[clap(short, parse(try_from_str=get_solver))]
+		solver: fn(),
+		
+		/// Inputs to the solver <size>/<id>
+		/// 
+		/// large/1..4 OR large OR large/1..4 small/5
+		#[clap(required = true,	parse(try_from_str=get_input_paths))]
+		paths: Vec<Vec<PathBuf>>,
+		// Vec allows for multiple inputs in the after the solver name
+	},
+}
+
+fn main() {
+	let args = Args::parse();
+
+	match &args.command {
+		// -- LIST --
+		Commands::List => {
+			println!("List of solvers:");
+		}
+		// -- SOLVE --
+		Commands::Solve { solver, paths } => {
+			// Collapse the multiple paths given into one set
+			let path_list : HashSet<&PathBuf> = HashSet::from_iter(
+				paths.iter()
+				.map(|vec| vec.iter())
+				.flatten()
+			);
+
+			// TODO: Make this parallel
+			// Run the solver on each input
+			
+
+			for p in path_list {
+				println!("{:?}", p);
+			}
+			// solver();
+		}
+	}
+}
+
+// -- Input parsing and validation --
+
+fn check_id_range(id: u8) -> Result<bool, String> {
+	const ID_RANGE: std::ops::RangeInclusive<u8> = 1..=239;
+
+	if !ID_RANGE.contains(&id) {
+		Err(format!("Id must be an integer between {} and {}", ID_RANGE.start(), ID_RANGE.end()))
+	} else {
+		Ok(true)
+	}
+}	
+
+// Converts input string to a list of paths
+fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
+	// Assuming run from root directory
+	let mut inputs: Vec<PathBuf> = Vec::new();
+
+	let size = input.split(std::path::MAIN_SEPARATOR)
+		.next()
+		.ok_or("Error parsing input")?;
+	let id = input.split(std::path::MAIN_SEPARATOR).skip(1).next();
+
+	let path = Path::new("./inputs").join(size);
+
+	match id {
+		// Return a subset of the files in the directory
+		Some(id) => {
+			let mut id_range = id.split("..");
+			let id_start = id_range.next()
+				.ok_or("Error parsing input")?
+				.parse::<u8>()
+				.map_err(|_| "id must be an integer")?;
+			let id_end = id_range.next();
+
+			check_id_range(id_start)?;
+
+			match id_end {
+				Some(id_end) => {
+					// Given a range
+					let id_end = id_end.parse::<u8>().map_err(|_| "id must be an integer")?;
+
+					check_id_range(id_end)?;
+					// Check that id start <= id end
+					(id_start <= id_end).then(|| 1).ok_or("start id must be less than end id")?;
+
+					for i in id_start..=id_end {
+						let mut current = path.clone();
+
+						// https://stackoverflow.com/questions/50458144/
+						current.push(format!("{:0>3}", i));
+						current.set_extension("in");
+
+						inputs.push(current);
+					}
+				}
+				None => {
+					// Given a single id
+					let mut current = path.clone();
+
+					current.push(format!("{:0>3}", id));
+					current.set_extension("in");
+					
+					inputs.push(current);
+
+				}
+			}
+			// Return the created vector
+			Ok(inputs)
+		}
+		None => {
+			// Return all files the directory
+			Ok(fs::read_dir(path)
+				.map_err(|_| "Error reading directory")?
+				.map(|entry| entry.unwrap().path())
+				.collect::<Vec<PathBuf>>())
+		}
+	}
+}
+
+// Validates and converts a string to a solver function
+fn get_solver(solver: &str) -> Result<fn(), String> {
+	SOLVERS.get(solver).cloned().ok_or("Solver not found, run list to see possible solvers".to_string())
+}
+
+// -- --
 
 fn solve_all_inputs() {
 	const CUTOFF_TIME: u32 = 500000; // max time in seconds
@@ -105,12 +262,6 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	write_sol(&best_grid_so_far, output_path);
 }
 
-fn main() {
-	// solve_all_inputs();
-	// solve_one_input();
-	// solve_one_randomized();
-	solve_all_randomized();
-}
 
 // Algorithms
 
