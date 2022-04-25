@@ -5,7 +5,7 @@ mod grid;
 mod lp;
 mod solvers;
 use std::collections::HashSet;
-use std::fs::{File, OpenOptions, self};
+use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -13,8 +13,8 @@ use std::path::{Path, PathBuf};
 use clap::{Parser, Subcommand};
 use grid::Grid;
 use phf::phf_map;
-use stopwatch::Stopwatch;
 use solvers::*;
+use stopwatch::Stopwatch;
 
 // Define solver functions
 
@@ -68,7 +68,8 @@ fn main() {
 		Commands::Solve { solver, paths } => {
 			// Collapse the multiple paths given into one set
 			let path_list: HashSet<&PathBuf> = HashSet::from_iter(paths.iter().map(|vec| vec.iter()).flatten());
-			// TODO: Maintain input order and use a different method to prevent multiple inputs from the same file
+			// TODO: Maintain input order and use a different method to prevent multiple
+			// inputs from the same file
 
 			// TODO: Make this parallel
 			// Run the solver on each input
@@ -82,7 +83,6 @@ fn main() {
 				solver(&grid, &mut sol);
 				// println!("{:#}", sol);
 				// println!("{:#}", grid);
-
 			}
 		}
 	}

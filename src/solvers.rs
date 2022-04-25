@@ -1,7 +1,6 @@
 use crate::grid::Grid;
 
 
-
 // -- Naive Greedy --
 /// Greedy algorithm for benchmarking.
 /// Places towers at all city locations that haven't been covered
