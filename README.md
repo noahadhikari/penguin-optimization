@@ -4,6 +4,9 @@
 - [Rust Instructions](#rust-instructions)
   - [Requirements](#requirements)
   - [Usage](#usage)
+    - [`list` or `ls`](#list-or-ls)
+    - [`solve`](#solve)
+      - [EXAMPLES:](#examples)
   - [Directory Structure](#directory-structure)
   - [Development](#development)
   - [Documentation](#documentation)
@@ -41,11 +44,40 @@ sudo apt-get install gcc
 
 ## Usage
 
-In the root of the directory, run
+// TODO: change name and add to the path
+
+First build the project with
 ```bash
-cargo run --release
+cargo build --release
 ```
-TODO: create and define cli arguments
+Then, in the root of the directory (or ensuring the inputs folder is in the same directory), run
+```bash
+./target/release/penguin-project <SUBCOMMAND>
+```
+Or equivalently (this builds it for you)
+```bash
+cargo run --release -- <SUBCOMMAND>
+```
+
+### `list` or `ls`
+This lists all available solvers
+
+### `solve`
+USAGE:
+```bash
+... solve -s <SOLVER> <PATHS>..
+```
+
+Where you can input any number of `PATH` arguments, each one in the form `<size>/<ids>`
+
+- `<size>` can be `small`, `medium`, or `large`
+- `<ids>` can be a single id or a range of ids
+
+#### EXAMPLES:
+
+`solve -s lp large` runs the `lp` solver on everything in the large folder
+
+`solve -s greedy small/1..220 medium/1` runs the `greedy` solver on ids 001 through 220 in the small folder and id 001 in the medium
 
 
 ## Directory Structure
