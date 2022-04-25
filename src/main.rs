@@ -1,34 +1,28 @@
 // Used to ignore unused code warnings.
 #![allow(dead_code)]
 
-//extern crates
+// extern crates
 #[macro_use]
 extern crate lazy_static;
-
 
 
 mod grid;
 mod lp;
 mod point;
 
-//crate imports
-use grid::Grid;
-use point::preprocess::setup_persistence;
-
-
-
-//other imports
+// crate imports
+// other imports
 use std::collections::HashMap;
 use std::fmt::Error;
 use std::fs::{DirEntry, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
-use std::fs;
-use std::u32;
+use std::{fs, u32};
 
+use grid::Grid;
+use point::preprocess::setup_persistence;
 use rand::{thread_rng, Rng};
-
 use stopwatch::Stopwatch;
 
 fn solve_all_inputs() {

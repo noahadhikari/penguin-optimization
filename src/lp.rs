@@ -1,9 +1,10 @@
-use crate::point::Point;
 use std::collections::HashSet;
 
 use good_lp::constraint::Constraint;
 use good_lp::variable::ProblemVariables;
 use good_lp::{coin_cbc, constraint, variable, variables, Expression, Solution, SolverModel, Variable};
+
+use crate::point::Point;
 
 /// Idea: Because penalty is monotonic ish, can try to minimize a linear penalty
 /// to use LP.
@@ -28,7 +29,6 @@ use good_lp::{coin_cbc, constraint, variable, variables, Expression, Solution, S
 /// ------------------------------
 ///
 /// total number of variables is on the order of R^2 * d^2.
-
 
 
 pub struct GridProblem {

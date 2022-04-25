@@ -1,145 +1,143 @@
-use serde::{Serialize, Deserialize};
-use serde::ser::{Serializer, SerializeSeq, SerializeMap};
-use serde::de::{Deserializer, Visitor, MapAccess};
-
-use std::marker::PhantomData;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::marker::PhantomData;
+
+use serde::de::{Deserializer, MapAccess, Visitor};
+use serde::ser::{SerializeMap, SerializeSeq, Serializer};
+use serde::{Deserialize, Serialize};
 
 lazy_static! {
-    static ref PEN_S: HashMap<Point, HashSet<Point>> = preprocess::load("small", "penalty");
-    static ref PEN_M: HashMap<Point, HashSet<Point>> = preprocess::load("medium", "penalty");
-    static ref PEN_L: HashMap<Point, HashSet<Point>> = preprocess::load("large", "penalty");
-
-    static ref SVC_S: HashMap<Point, HashSet<Point>> = preprocess::load("small", "service");
-    static ref SVC_M: HashMap<Point, HashSet<Point>> = preprocess::load("medium", "service");
-    static ref SVC_L: HashMap<Point, HashSet<Point>> = preprocess::load("large", "service");
+	static ref PEN_S: HashMap<Point, HashSet<Point>> = preprocess::load("small", "penalty");
+	static ref PEN_M: HashMap<Point, HashSet<Point>> = preprocess::load("medium", "penalty");
+	static ref PEN_L: HashMap<Point, HashSet<Point>> = preprocess::load("large", "penalty");
+	static ref SVC_S: HashMap<Point, HashSet<Point>> = preprocess::load("small", "service");
+	static ref SVC_M: HashMap<Point, HashSet<Point>> = preprocess::load("medium", "service");
+	static ref SVC_L: HashMap<Point, HashSet<Point>> = preprocess::load("large", "service");
 }
 
 pub mod preprocess {
-    use super::*;
-    use serde_with::serde_as;
+	use std::fmt::Error;
+	use std::fs;
+	use std::fs::{DirEntry, File, OpenOptions};
+	use std::io::prelude::*;
+	use std::io::{self, BufReader, Write};
+	use std::path::Path;
 
-    use std::fmt::Error;
-    use std::fs::{DirEntry, File, OpenOptions};
-    use std::io::prelude::*;
-    use std::io::{self, BufReader, Write};
-    use std::path::Path;
-    use std::fs;
+	use serde_with::serde_as;
 
-    #[derive(Debug)]
-    struct PointData {
-        map: HashMap<Point, HashSet<Point>>,
-    }
-    impl PointData {
-        pub fn new(map: HashMap<Point, HashSet<Point>>) -> Self {
-            PointData {
-                map
-            }
-        }
-        
-        pub fn to_map(self) -> HashMap<Point, HashSet<Point>> {
-            self.map
-        }
-    }
-    
-    impl Serialize for PointData {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            let mut map = serializer.serialize_map(Some(self.map.len()))?;
-            for (k, v) in self.map.iter() {
-                let mut vector = vec![];
-                for p in v {
-                    vector.push(p);
-                }
-                let s = format!("{:?}\n", vector);
-                map.serialize_entry(&k.to_string(), &s)?;
-            }
-            map.end()
-        }
-    }
-    
-    pub fn setup_persistence() {
-        let options = vec![
-            ("small", "penalty"),
-            // ("medium", "penalty"),
-            // ("large", "penalty"),
-            // ("small", "service"),
-            // ("medium", "service"),
-            // ("large", "service")
-        ];
-        for (size, cover) in options {
-            create(size, cover);
-        }
-    }
-    /// Writes out the coverage points for the given size and cover, i.e. penalty or service.
-    fn create(size: &str, cover: &str) {
-        let output_path = match (size, cover) {
-            ("small", "penalty") => "./preprocess/penalty/small.cfg",
-            ("medium", "penalty") => "./preprocess/penalty/medium.cfg",
-            ("large", "penalty") => "./preprocess/penalty/large.cfg",
-            ("small", "service") => "./preprocess/service/small.cfg",
-            ("medium", "service") => "./preprocess/service/medium.cfg",
-            ("large", "service") => "./preprocess/service/large.cfg",
-            _ => panic!("Invalid size or cover")
-        };
+	use super::*;
 
-        let r: u8 = match (size, cover) {
-            ("small", "penalty") => 8,
-            ("medium", "penalty") => 10,
-            ("large", "penalty") => 14,
-            ("small", "service") => 3,
-            ("medium", "service") => 3,
-            ("large", "service") => 3,
-            _ => panic!("Invalid size or cover")
-        };
+	#[derive(Debug)]
+	struct PointData {
+		map: HashMap<Point, HashSet<Point>>,
+	}
+	impl PointData {
+		pub fn new(map: HashMap<Point, HashSet<Point>>) -> Self {
+			PointData { map }
+		}
 
-        let dim: u8 = match size {
-            "small" => 30,
-            "medium" => 50,
-            "large" => 100,
-            _ => panic!("Invalid size")
-        };
+		pub fn to_map(self) -> HashMap<Point, HashSet<Point>> {
+			self.map
+		}
+	}
 
-        assert!(!Path::new(output_path).exists(), "Point preprocessing for {} already exists.", size);
+	impl Serialize for PointData {
+		fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+		where
+			S: Serializer, {
+			let mut map = serializer.serialize_map(Some(self.map.len()))?;
+			for (k, v) in self.map.iter() {
+				let mut vector = vec![];
+				for p in v {
+					vector.push(p);
+				}
+				let s = format!("{:?}\n", vector);
+				map.serialize_entry(&k.to_string(), &s)?;
+			}
+			map.end()
+		}
+	}
 
-        let mut map: HashMap<Point, HashSet<Point>> = HashMap::new();
-        for i in 0..dim {
-            for j in 0..dim {
-                let p = Point::new(i.into(), j.into());
-                let points_within = Point::points_within_radius(p, r, dim);
-                map.insert(p, points_within);
-            }
-        }
-        // println!("{:?}", map);
-        let data = PointData::new(map);
-        let j = serde_json::to_string(&data).unwrap();
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(output_path)
-            .unwrap();
-        file.write_all(j.as_bytes()).unwrap();
-    }
+	pub fn setup_persistence() {
+		let options = vec![
+			("small", "penalty"),
+			// ("medium", "penalty"),
+			// ("large", "penalty"),
+			// ("small", "service"),
+			// ("medium", "service"),
+			// ("large", "service")
+		];
+		for (size, cover) in options {
+			create(size, cover);
+		}
+	}
+	/// Writes out the coverage points for the given size and cover, i.e. penalty
+	/// or service.
+	fn create(size: &str, cover: &str) {
+		let output_path = match (size, cover) {
+			("small", "penalty") => "./preprocess/penalty/small.cfg",
+			("medium", "penalty") => "./preprocess/penalty/medium.cfg",
+			("large", "penalty") => "./preprocess/penalty/large.cfg",
+			("small", "service") => "./preprocess/service/small.cfg",
+			("medium", "service") => "./preprocess/service/medium.cfg",
+			("large", "service") => "./preprocess/service/large.cfg",
+			_ => panic!("Invalid size or cover"),
+		};
 
-    pub fn load(size: &str, cover: &str) -> HashMap<Point, HashSet<Point>> {
-        let input_path = match (size, cover) {
-            ("small", "penalty") => "./preprocess/penalty/small.cfg",
-            ("medium", "penalty") => "./preprocess/penalty/medium.cfg",
-            ("large", "penalty") => "./preprocess/penalty/large.cfg",
-            ("small", "service") => "./preprocess/service/small.cfg",
-            ("medium", "service") => "./preprocess/service/medium.cfg",
-            ("large", "service") => "./preprocess/service/large.cfg",
-            _ => panic!("Invalid size or cover")
-        };
+		let r: u8 = match (size, cover) {
+			("small", "penalty") => 8,
+			("medium", "penalty") => 10,
+			("large", "penalty") => 14,
+			("small", "service") => 3,
+			("medium", "service") => 3,
+			("large", "service") => 3,
+			_ => panic!("Invalid size or cover"),
+		};
 
-        // let j = fs::read_to_string(Path::new(input_path)).expect("Could not read file.");
-        // let data: HashMap<String, HashMap<String, f64>> = serde_json::from_str(&j).unwrap();
-        // data.to_map()
-        HashMap::new()
-    }
+		let dim: u8 = match size {
+			"small" => 30,
+			"medium" => 50,
+			"large" => 100,
+			_ => panic!("Invalid size"),
+		};
+
+		assert!(
+			!Path::new(output_path).exists(),
+			"Point preprocessing for {} already exists.",
+			size
+		);
+
+		let mut map: HashMap<Point, HashSet<Point>> = HashMap::new();
+		for i in 0..dim {
+			for j in 0..dim {
+				let p = Point::new(i.into(), j.into());
+				let points_within = Point::points_within_radius(p, r, dim);
+				map.insert(p, points_within);
+			}
+		}
+		// println!("{:?}", map);
+		let data = PointData::new(map);
+		let j = serde_json::to_string(&data).unwrap();
+		let mut file = OpenOptions::new().write(true).create(true).open(output_path).unwrap();
+		file.write_all(j.as_bytes()).unwrap();
+	}
+
+	pub fn load(size: &str, cover: &str) -> HashMap<Point, HashSet<Point>> {
+		let input_path = match (size, cover) {
+			("small", "penalty") => "./preprocess/penalty/small.cfg",
+			("medium", "penalty") => "./preprocess/penalty/medium.cfg",
+			("large", "penalty") => "./preprocess/penalty/large.cfg",
+			("small", "service") => "./preprocess/service/small.cfg",
+			("medium", "service") => "./preprocess/service/medium.cfg",
+			("large", "service") => "./preprocess/service/large.cfg",
+			_ => panic!("Invalid size or cover"),
+		};
+
+		// let j = fs::read_to_string(Path::new(input_path)).expect("Could not read
+		// file."); let data: HashMap<String, HashMap<String, f64>> =
+		// serde_json::from_str(&j).unwrap(); data.to_map()
+		HashMap::new()
+	}
 }
 
 
@@ -206,16 +204,16 @@ impl Point {
 
 		result
 
-        // let result = match (dim, r) {
-        //     (30, 8) => PEN_S.get(&p),
-        //     (50, 10) => PEN_M.get(&p),
-        //     (100, 14) => PEN_L.get(&p),
-        //     (30, 3) => SVC_S.get(&p),
-        //     (50, 3) => SVC_M.get(&p),
-        //     (100, 3) => SVC_L.get(&p),
-        //     _ => panic!("Invalid size / radius combination")
-        // };
-        // result.unwrap().clone()
+		// let result = match (dim, r) {
+		//     (30, 8) => PEN_S.get(&p),
+		//     (50, 10) => PEN_M.get(&p),
+		//     (100, 14) => PEN_L.get(&p),
+		//     (30, 3) => SVC_S.get(&p),
+		//     (50, 3) => SVC_M.get(&p),
+		//     (100, 3) => SVC_L.get(&p),
+		//     _ => panic!("Invalid size / radius combination")
+		// };
+		// result.unwrap().clone()
 	}
 
 	/// Returns whether (x2, y2) is within r units of (x1, y1) and within this
