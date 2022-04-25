@@ -3,7 +3,7 @@
 
 mod grid;
 mod lp;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::hash::Hash;
@@ -11,10 +11,10 @@ use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
 
-use grid::Grid;
-use stopwatch::Stopwatch;
 use clap::{Parser, Subcommand};
+use grid::Grid;
 use phf::phf_map;
+use stopwatch::Stopwatch;
 
 // Define solver functions
 
@@ -42,12 +42,12 @@ enum Commands {
 	/// Run a solver on several specified inputs
 	#[clap(arg_required_else_help = true)]
 	Solve {
-		/// Solver to use 
+		/// Solver to use
 		#[clap(short, parse(try_from_str=get_solver))]
 		solver: fn(),
-		
+
 		/// Inputs to the solver <size>/<id>
-		/// 
+		///
 		/// large/1..4 OR large OR large/1..4 small/5
 		#[clap(required = true,	parse(try_from_str=get_input_paths))]
 		paths: Vec<Vec<PathBuf>>,
@@ -66,15 +66,11 @@ fn main() {
 		// -- SOLVE --
 		Commands::Solve { solver, paths } => {
 			// Collapse the multiple paths given into one set
-			let path_list : HashSet<&PathBuf> = HashSet::from_iter(
-				paths.iter()
-				.map(|vec| vec.iter())
-				.flatten()
-			);
+			let path_list: HashSet<&PathBuf> = HashSet::from_iter(paths.iter().map(|vec| vec.iter()).flatten());
 
 			// TODO: Make this parallel
 			// Run the solver on each input
-			
+
 
 			for p in path_list {
 				println!("{:?}", p);
@@ -90,18 +86,23 @@ fn check_id_range(id: u8) -> Result<bool, String> {
 	const ID_RANGE: std::ops::RangeInclusive<u8> = 1..=239;
 
 	if !ID_RANGE.contains(&id) {
-		Err(format!("Id must be an integer between {} and {}", ID_RANGE.start(), ID_RANGE.end()))
+		Err(format!(
+			"Id must be an integer between {} and {}",
+			ID_RANGE.start(),
+			ID_RANGE.end()
+		))
 	} else {
 		Ok(true)
 	}
-}	
+}
 
 // Converts input string to a list of paths
 fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 	// Assuming run from root directory
 	let mut inputs: Vec<PathBuf> = Vec::new();
 
-	let size = input.split(std::path::MAIN_SEPARATOR)
+	let size = input
+		.split(std::path::MAIN_SEPARATOR)
 		.next()
 		.ok_or("Error parsing input")?;
 	let id = input.split(std::path::MAIN_SEPARATOR).skip(1).next();
@@ -112,7 +113,8 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 		// Return a subset of the files in the directory
 		Some(id) => {
 			let mut id_range = id.split("..");
-			let id_start = id_range.next()
+			let id_start = id_range
+				.next()
 				.ok_or("Error parsing input")?
 				.parse::<u8>()
 				.map_err(|_| "id must be an integer")?;
@@ -127,7 +129,9 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 
 					check_id_range(id_end)?;
 					// Check that id start <= id end
-					(id_start <= id_end).then(|| 1).ok_or("start id must be less than end id")?;
+					(id_start <= id_end)
+						.then(|| 1)
+						.ok_or("start id must be less than end id")?;
 
 					for i in id_start..=id_end {
 						let mut current = path.clone();
@@ -145,9 +149,8 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 
 					current.push(format!("{:0>3}", id));
 					current.set_extension("in");
-					
-					inputs.push(current);
 
+					inputs.push(current);
 				}
 			}
 			// Return the created vector
@@ -155,17 +158,22 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 		}
 		None => {
 			// Return all files the directory
-			Ok(fs::read_dir(path)
-				.map_err(|_| "Error reading directory")?
-				.map(|entry| entry.unwrap().path())
-				.collect::<Vec<PathBuf>>())
+			Ok(
+				fs::read_dir(path)
+					.map_err(|_| "Error reading directory")?
+					.map(|entry| entry.unwrap().path())
+					.collect::<Vec<PathBuf>>(),
+			)
 		}
 	}
 }
 
 // Validates and converts a string to a solver function
 fn get_solver(solver: &str) -> Result<fn(), String> {
-	SOLVERS.get(solver).cloned().ok_or("Solver not found, run list to see possible solvers".to_string())
+	SOLVERS
+		.get(solver)
+		.cloned()
+		.ok_or("Solver not found, run list to see possible solvers".to_string())
 }
 
 // -- --
