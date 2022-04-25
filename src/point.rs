@@ -1,5 +1,5 @@
-use std::fmt;
 use std::collections::HashSet;
+use std::fmt;
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]

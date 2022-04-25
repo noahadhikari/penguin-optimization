@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+
 use crate::point::Point;
 
 // A Grid which we place towers and cities on.
@@ -294,4 +295,3 @@ impl Grid {
 		}
 	}
 }
-
