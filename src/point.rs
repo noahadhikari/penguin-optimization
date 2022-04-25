@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
+// Static preprocessed data for points within radii.
 lazy_static! {
 	static ref PEN_S: HashMap<Point, HashSet<Point>> = preprocess::load("small", "penalty");
 	static ref PEN_M: HashMap<Point, HashSet<Point>> = preprocess::load("medium", "penalty");
@@ -10,6 +11,7 @@ lazy_static! {
 	static ref SVC_L: HashMap<Point, HashSet<Point>> = preprocess::load("large", "service");
 }
 
+// Preprocessing module for points within radii.
 pub mod preprocess {
 	use std::fs::{File, OpenOptions};
 	use std::io::prelude::*;
@@ -19,6 +21,7 @@ pub mod preprocess {
 	use super::*;
 
 
+    /// Writes out the preprocessing data for all combinations of size and cover.
 	pub fn setup_persistence() {
 		let options = vec![
 			("small", "penalty"),
@@ -76,12 +79,12 @@ pub mod preprocess {
 				map.insert(p, points_within);
 			}
 		}
-		// println!("{:?}", map);
 		let s = format! {"{:#?}", map};
 		let mut file = OpenOptions::new().write(true).create(true).open(output_path).unwrap();
 		file.write_all(s.as_bytes()).unwrap();
 	}
 
+    /// Loads the preprocessed points for the given size (small, medium, large) and cover, i.e. penalty or service
 	pub fn load(size: &str, cover: &str) -> HashMap<Point, HashSet<Point>> {
 		let input_path = match (size, cover) {
 			("small", "penalty") => "./preprocess/penalty/small.txt",
@@ -105,6 +108,7 @@ pub mod preprocess {
 		let mut within: HashSet<Point> = HashSet::new();
 		let mut found = false;
 		use regex::Regex;
+        // Regex pattern matching points (x, y)
 		let re = Regex::new(r"\((\d+), (\d+)\)").unwrap();
 
 		for line in reader.lines() {
