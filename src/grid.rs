@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
+use crate::lp::GridProblem;
+
 // A Grid which we place towers and cities on.
 #[derive(Clone)]
 pub struct Grid {
@@ -88,6 +90,10 @@ impl Grid {
 			cities: HashMap::new(),
 		}
 	}
+
+    pub fn new_dummy_grid() -> Grid {
+        Grid::new(0, 0, 0)
+    }
 
 	/// Returns the total penalty P of this Grid.
 	pub fn penalty(&self) -> f64 {
@@ -215,10 +221,24 @@ impl Grid {
 		res
 	}
 
-	pub fn get_cities(&self) -> &HashMap<Point, HashSet<Point>> {
+	pub fn get_cities_ref(&self) -> &HashMap<Point, HashSet<Point>> {
 		&self.cities
 	}
 
+    pub fn get_towers_ref(&self) -> &HashMap<Point, HashSet<Point>> {
+        &self.towers
+    }
+
+    pub fn replace_all_towers(&mut self, towers: HashMap<Point, HashSet<Point>>) {
+        if self.towers == towers {
+            return;
+        }
+        self.remove_all_towers();
+        for (point, _) in towers.iter() {
+            self.add_tower(point.x, point.y);
+        }
+
+    }
 	pub fn set_service_radius(&mut self, serv_radius: u8) {
 		self.service_radius = serv_radius;
 	}
@@ -238,11 +258,9 @@ impl Grid {
 		}
 	}
 
-	/// Randomly solves the Grid using LP for the given number of iterations and
-	/// takes the best solution.
+	/// Randomly solves the Grid using LP up until the max time and
+	/// returns (penalty, Grid).
 	pub fn random_lp_solve(&mut self, max_time: u32, seed: u32) -> f64 {
-		use crate::lp::GridProblem;
-
 		let mut city_keys = HashSet::new();
 		for (&c, _) in self.cities.iter() {
 			city_keys.insert(c);
