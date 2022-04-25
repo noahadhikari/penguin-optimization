@@ -10,13 +10,10 @@ mod grid;
 mod lp;
 mod point;
 
-//crate imports
-use grid::Grid;
+// crate imports
 // use point::preprocess::setup_persistence;
 
-
-
-//other imports
+// other imports
 use std::collections::HashMap;
 // use std::fmt::Error;
 use std::fs::{File, OpenOptions};
@@ -25,6 +22,7 @@ use std::io::{self, BufReader, Write};
 use std::path::Path;
 use std::{fs, u32};
 
+use grid::Grid;
 use rand::{thread_rng, Rng};
 use stopwatch::Stopwatch;
 
