@@ -1,70 +1,79 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 // A Grid which we place towers and cities on.
 #[derive(Clone)]
 pub struct Grid {
-    dimension: u8,
-    service_radius: u8,
-    penalty_radius: u8,
+	dimension:      u8,
+	service_radius: u8,
+	penalty_radius: u8,
 
-    // Mapping from <coordinates of towers, coordinates of other towers within penalty radius>.
-    // i.e. < (2, 3), {(5, 6), (7, 8)} >
-    towers: HashMap<Point, HashSet<Point>>,
+	// Mapping from <coordinates of towers, coordinates of other towers within penalty radius>.
+	// i.e. < (2, 3), {(5, 6), (7, 8)} >
+	towers: HashMap<Point, HashSet<Point>>,
 
-    // Mapping from <coordinates of cities, towers that cover it>.
-    // i.e. < (4, 4), {(1, 2), (3, 4)} >
-    cities: HashMap<Point, HashSet<Point>>,
+	// Mapping from <coordinates of cities, towers that cover it>.
+	// i.e. < (4, 4), {(1, 2), (3, 4)} >
+	cities: HashMap<Point, HashSet<Point>>,
 }
 
 impl fmt::Debug for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if f.alternate() { // pretty print
-            write!(f, "Grid {{ \n\nPenalty: {}\nValid: {}\n\ndimension: {}, service_radius: {}, penalty_radius: {},\n\ntowers: {:#?},\n\ncities: {:#?} \n\n}}",
-            self.penalty(), 
-            self.is_valid(), 
-            self.dimension, 
-            self.service_radius, 
-            self.penalty_radius, 
-            self.towers,
-            self.cities)
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		if f.alternate() {
+			// pretty print
+			write!(
+				f,
+				"Grid {{ \n\nPenalty: {}\nValid: {}\n\ndimension: {}, service_radius: {}, penalty_radius: {},\n\ntowers: \
+				 {:#?},\n\ncities: {:#?} \n\n}}",
+				self.penalty(),
+				self.is_valid(),
+				self.dimension,
+				self.service_radius,
+				self.penalty_radius,
+				self.towers,
+				self.cities
+			)
+		} else {
+			// standard print
 
-        } else { // standard print
-            
-            write!(f, "Grid {{ Penalty: {}, Valid: {}, dimension: {}, service_radius: {}, penalty_radius: {}, towers: {:?}, cities: {:?} }}",
-            self.penalty(),
-            self.is_valid(), 
-            self.dimension, 
-            self.service_radius, 
-            self.penalty_radius, 
-            self.towers, 
-            self.cities)
-        }
-    }
+			write!(
+				f,
+				"Grid {{ Penalty: {}, Valid: {}, dimension: {}, service_radius: {}, penalty_radius: {}, towers: {:?}, cities: \
+				 {:?} }}",
+				self.penalty(),
+				self.is_valid(),
+				self.dimension,
+				self.service_radius,
+				self.penalty_radius,
+				self.towers,
+				self.cities
+			)
+		}
+	}
 }
 
 /// Pretty printer for Grid.
 impl fmt::Display for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Penalty: {}\n", self.penalty());
-        for y in (0..self.dimension).rev() {
-            for x in 0..self.dimension {
-                let p = Point::new(x as i32, y as i32);
-                if self.towers.contains_key(&p) && self.cities.contains_key(&p) {
-                    write!(f, "¢"); //city and tower at same point
-                } else if self.towers.contains_key(&p) {
-                    write!(f, "t")?; //tower at this point
-                } else if self.cities.contains_key(&p) {
-                    write!(f, "c")?; // city at this point
-                } else {
-                    write!(f, "·")?; //nothing at this point
-                }
-                write!(f, " ")?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "Penalty: {}\n", self.penalty());
+		for y in (0..self.dimension).rev() {
+			for x in 0..self.dimension {
+				let p = Point::new(x as i32, y as i32);
+				if self.towers.contains_key(&p) && self.cities.contains_key(&p) {
+					write!(f, "¢"); // city and tower at same point
+				} else if self.towers.contains_key(&p) {
+					write!(f, "t")?; // tower at this point
+				} else if self.cities.contains_key(&p) {
+					write!(f, "c")?; // city at this point
+				} else {
+					write!(f, "·")?; // nothing at this point
+				}
+				write!(f, " ")?;
+			}
+			write!(f, "\n")?;
+		}
+		Ok(())
+	}
 }
 
 impl Grid {
@@ -265,72 +274,73 @@ impl Grid {
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Point {
-    pub x: i32,
-    pub y: i32,
+	pub x: i32,
+	pub y: i32,
 }
 
 impl fmt::Debug for Point {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "({}, {})", self.x, self.y)
+	}
 }
 
 impl fmt::Display for Point {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "({}, {})", self.x, self.y)
+	}
 }
 
 impl Point {
-    /// Creates and returns a new Point with the given x and y coordinates.
-    pub fn new(x: i32, y: i32) -> Point {
-        Point { x, y }
-    }
+	/// Creates and returns a new Point with the given x and y coordinates.
+	pub fn new(x: i32, y: i32) -> Point {
+		Point { x, y }
+	}
 
-    /// Returns the Euclidean distance between two points.
-    fn dist(p1: &Point, p2: &Point) -> f64 {
-        (((p1.x - p2.x).pow(2) + (p1.y - p2.y).pow(2)) as f64).sqrt()
-    }
+	/// Returns the Euclidean distance between two points.
+	fn dist(p1: &Point, p2: &Point) -> f64 {
+		(((p1.x - p2.x).pow(2) + (p1.y - p2.y).pow(2)) as f64).sqrt()
+	}
 
-    /// Returns the Euclidean distance between this point and the given point.
-    fn dist_to(&self, p: &Point) -> f64 {
-        Point::dist(self, p)
-    }
+	/// Returns the Euclidean distance between this point and the given point.
+	fn dist_to(&self, p: &Point) -> f64 {
+		Point::dist(self, p)
+	}
 
-    /// Returns the file string form of this point, e.g. (3, 4) -> "3 4".
-    fn file_string(&self) -> String {
-        self.x.to_string() + " " + &self.y.to_string()	
-    }
+	/// Returns the file string form of this point, e.g. (3, 4) -> "3 4".
+	fn file_string(&self) -> String {
+		self.x.to_string() + " " + &self.y.to_string()
+	}
 
-    pub fn get_x(&self) -> i32 {
-        self.x
-    }
+	pub fn get_x(&self) -> i32 {
+		self.x
+	}
 
-    pub fn get_y(&self) -> i32 {
-        self.y
-    }
+	pub fn get_y(&self) -> i32 {
+		self.y
+	}
 
-    /// Returns a set of all the grid points within the given radius of the given point.
-    pub fn points_within_radius(p: Point, r: u8, dim: u8) -> HashSet<Point> {
-        let mut result = HashSet::new();
-        let r = r as i32;
-        for i in -r..(r+1) {
-            for j in -r..(r+1) {
-                if Self::within(r, p.x, p.y, p.x + i, p.y + j, dim) {
-                    result.insert(Self::new(p.x + i, p.y + j));
-                }
-            }
-        }
+	/// Returns a set of all the grid points within the given radius of the given
+	/// point.
+	pub fn points_within_radius(p: Point, r: u8, dim: u8) -> HashSet<Point> {
+		let mut result = HashSet::new();
+		let r = r as i32;
+		for i in -r..(r + 1) {
+			for j in -r..(r + 1) {
+				if Self::within(r, p.x, p.y, p.x + i, p.y + j, dim) {
+					result.insert(Self::new(p.x + i, p.y + j));
+				}
+			}
+		}
 
-        result
-    }
+		result
+	}
 
-    /// Returns whether (x2, y2) is within r units of (x1, y1) and within this Grid.
-    fn within(r: i32, x1: i32, y1: i32, x2: i32, y2: i32, d: u8) -> bool {
-        if x2 < 0 || x2 >= d as i32 || y2 < 0 || y2 >= d as i32 {
-            return false;
-        }
-        (x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
-    }
-
+	/// Returns whether (x2, y2) is within r units of (x1, y1) and within this
+	/// Grid.
+	fn within(r: i32, x1: i32, y1: i32, x2: i32, y2: i32, d: u8) -> bool {
+		if x2 < 0 || x2 >= d as i32 || y2 < 0 || y2 >= d as i32 {
+			return false;
+		}
+		(x1 - x2).pow(2) + (y1 - y2).pow(2) <= r.pow(2)
+	}
 }
