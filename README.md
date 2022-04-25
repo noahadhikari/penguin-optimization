@@ -33,7 +33,11 @@ Next install `coin-or cbc`, the LP solver we currently use by either running the
 sudo apt-get install coinor-cbc coinor-libcbc-dev
 ```
 
-If (when) we move over to the `HiGHS` solver, you will need a C compiler.
+You will need a C compiler:
+
+```bash
+sudo apt-get install gcc
+```
 
 ## Usage
 
