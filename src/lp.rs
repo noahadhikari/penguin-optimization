@@ -7,21 +7,19 @@ use good_lp::{coin_cbc, constraint, variable, variables, Expression, Solution, S
 /// Idea: Because penalty is monotonic ish, can try to minimize a linear penalty
 /// to use LP.
 ///
-/// let z_{ij} = {0, 1} correspond to whether or not a tower is placed at (i, j)
+/// let t_{ij} = {0, 1} correspond to whether or not a tower is placed at (i, j)
 ///
 /// for each city, ensure that at least one tower is covering it.
-/// i.e. for each c_ij, sum of z_{ij} in coverage(c_ij) >= 1
+/// i.e. for each c_ij, sum of t_{ij} in coverage(c_ij) >= 1
 ///
-/// for each point in z, want to calculate penalty for that point, but only if
+/// for each point in t, want to calculate penalty for that point, but only if
 /// the tower is actually there. let p_{ij,kl} = penalty at position ij for
-/// position kl only if tower z_ij is present and z_kl exists for all
+/// position kl only if tower t_ij is present and t_kl exists for all
 ///     kl in the penalty coverage of ij.
-/// p_ijkl = z_kl if z_ij else 0
-/// -> z_ij AND z_kl
-/// -> p_ijkl <= z_kl, p_ijkl <= z_ij, p_ijkl >= z_ij + z_kl - 1.
+/// p_ijkl = t_kl if t_ij else 0
+/// -> t_ij AND t_kl
+/// -> p_ijkl <= t_kl, p_ijkl <= t_ij, p_ijkl >= t_ij + t_kl - 1.
 ///
-/// TODO: investigate - can we have piecewise linear (leaky relu) for each p_i?
-/// Then sum over p_i to get total penalty.     will ignore for now.
 ///
 /// all variables are binary except the total penalty (maybe unnecessary, but P
 /// = sum_ij p_ij). minimize sum of p_ij (== P).
@@ -34,7 +32,7 @@ use crate::grid::Point;
 
 pub struct GridProblem {
 	vars:          ProblemVariables,
-	z:             Vec<Vec<Variable>>,
+	t:             Vec<Vec<Variable>>,
 	constraints:   Vec<Constraint>,
 	total_penalty: Expression,
 	dim:           u8,
@@ -46,15 +44,15 @@ pub struct GridProblem {
 }
 
 impl GridProblem {
-	/// Adds a new tower variable z_ij at the given point (i, j) to the LP.
+	/// Adds a new tower variable t_ij at the given point (i, j) to the LP.
 	fn add_tower_variable(&mut self, tower: Point) -> Variable {
-		let name = format!("z_{}_{}", tower.x, tower.y);
-		let is_tower = self.vars.add(variable().binary().name(name));
+		// let name = format!("t_{}_{}", tower.x, tower.y);
+		let is_tower = self.vars.add(variable().binary()); //.name(name));
 		is_tower
 	}
 
 	/// Adds the penalty variable p_ijkl for point ij and tower kl to the LP.
-	fn add_penalty_variables_ijkl(&mut self) {
+	fn add_penalty_variables(&mut self) {
 		for i in 0..(self.dim as usize) {
 			for j in 0..(self.dim as usize) {
 				let p = Point::new(i as i32, j as i32);
@@ -63,30 +61,18 @@ impl GridProblem {
 					let k = point.x as usize;
 					let l = point.y as usize;
 
-					let name = format!("p_{}_{}_{}_{}", i, j, k, l);
-					let p_ijkl = self.vars.add(variable().binary().name(name));
-					self.constraints.push(constraint!(p_ijkl <= self.z[i][j]));
-					self.constraints.push(constraint!(p_ijkl <= self.z[k][l]));
+					// let name = format!("p_{}_{}_{}_{}", i, j, k, l);
+					let p_ijkl = self.vars.add(variable().binary()); //.name(name));
+					self.constraints.push(constraint!(p_ijkl <= self.t[i][j]));
+					self.constraints.push(constraint!(p_ijkl <= self.t[k][l]));
 					self
 						.constraints
-						.push(constraint!(p_ijkl >= self.z[i][j] + self.z[k][l] - 1));
+						.push(constraint!(p_ijkl >= self.t[i][j] + self.t[k][l] - 1));
 
 					self.total_penalty += p_ijkl;
 				}
 			}
 		}
-	}
-
-	/// Adds the penalty variables p_ij to the LP.
-	fn add_penalty_variables(&mut self) {
-		self.add_penalty_variables_ijkl(); // more optimal but hella slow. maybe
-		                               // consider for small inputs but that's it.
-		                               // self.add_penalty_variables_leaky_relu();
-		                               // // a balance between the two, for medium
-		                               // inputs. could use tuning.
-		                               // self.add_penalty_variables_big_m(); // for
-		                               // large inputs; runs quickly and gives
-		                               // decent savings.
 	}
 
 	/// Adds the city coverage constraints to the LP.
@@ -95,17 +81,18 @@ impl GridProblem {
 			let coverage = Point::points_within_radius(c, self.r_s, self.dim);
 			let mut sum = Expression::with_capacity(coverage.len());
 			for point in coverage {
-				sum.add_mul(1, self.z[point.x as usize][point.y as usize]);
+				sum.add_mul(1, self.t[point.x as usize][point.y as usize]);
 			}
 			self.constraints.push(sum.geq(1));
 		}
 	}
 
+	/// Creates a new grid for randomization solving.
 	pub fn new_randomized(dim: u8, r_s: u8, r_p: u8, cities: HashSet<Point>, max_time: u32, seed: u32) -> GridProblem {
 		let mut lp = GridProblem {
 			vars: variables![],
 			constraints: vec![],
-			z: vec![],
+			t: vec![],
 			dim,
 			r_s,
 			r_p,
@@ -117,16 +104,16 @@ impl GridProblem {
 
 		// add variables for each tower
 		let dummy = lp.add_tower_variable(Point::new(-69420, -69420));
-		lp.z = vec![vec![dummy; dim.into()]; dim.into()];
+		lp.t = vec![vec![dummy; dim.into()]; dim.into()];
 		for i in 0..dim {
 			for j in 0..dim {
 				let potential_tower = Point::new(i as i32, j as i32);
-				lp.z[i as usize][j as usize] = lp.add_tower_variable(potential_tower);
-				use rand::Rng;
-				let r: i32 = rand::thread_rng().gen_range(-4..=4);
-				lp.total_penalty += lp.z[i as usize][j as usize];
+				lp.t[i as usize][j as usize] = lp.add_tower_variable(potential_tower);
+				lp.total_penalty += lp.t[i as usize][j as usize];
 			}
 		}
+
+		// ignores penalty constraints for randomization
 
 		// add city constraints
 		lp.add_city_constraints(cities);
@@ -169,12 +156,12 @@ impl GridProblem {
 	pub fn tower_solution(self) -> HashSet<Point> {
 		const TOL: f64 = 1e-6;
 		let d = self.dim as usize;
-		let z = self.z.clone();
+		let t = self.t.clone();
 		let solution = self.solution();
 		let mut result = HashSet::new();
 		for i in 0..d {
 			for j in 0..d {
-				if (solution.value(z[i][j]) - 1.).abs() < TOL {
+				if (solution.value(t[i][j]) - 1.).abs() < TOL {
 					result.insert(Point::new(i as i32, j as i32));
 				}
 			}
