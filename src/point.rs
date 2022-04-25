@@ -1,4 +1,8 @@
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
+use serde::ser::{Serializer, SerializeSeq, SerializeMap};
+use serde::de::{Deserializer, Visitor, MapAccess};
+
+use std::marker::PhantomData;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
@@ -14,8 +18,6 @@ lazy_static! {
 
 pub mod preprocess {
     use super::*;
-
-    use serde_json::{Deserializer, Serializer};
     use serde_with::serde_as;
 
     use std::fmt::Error;
@@ -25,16 +27,14 @@ pub mod preprocess {
     use std::path::Path;
     use std::fs;
 
-    #[serde_as]
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Debug)]
     struct PointData {
-        #[serde_as(as = "Vec<(_, _)>")]
         map: HashMap<Point, HashSet<Point>>,
     }
     impl PointData {
         pub fn new(map: HashMap<Point, HashSet<Point>>) -> Self {
             PointData {
-                map,
+                map
             }
         }
         
@@ -42,15 +42,33 @@ pub mod preprocess {
             self.map
         }
     }
-
+    
+    impl Serialize for PointData {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let mut map = serializer.serialize_map(Some(self.map.len()))?;
+            for (k, v) in self.map.iter() {
+                let mut vector = vec![];
+                for p in v {
+                    vector.push(p);
+                }
+                let s = format!("{:?}\n", vector);
+                map.serialize_entry(&k.to_string(), &s)?;
+            }
+            map.end()
+        }
+    }
+    
     pub fn setup_persistence() {
         let options = vec![
             ("small", "penalty"),
-            ("medium", "penalty"),
-            ("large", "penalty"),
-            ("small", "service"),
-            ("medium", "service"),
-            ("large", "service")
+            // ("medium", "penalty"),
+            // ("large", "penalty"),
+            // ("small", "service"),
+            // ("medium", "service"),
+            // ("large", "service")
         ];
         for (size, cover) in options {
             create(size, cover);
@@ -59,12 +77,12 @@ pub mod preprocess {
     /// Writes out the coverage points for the given size and cover, i.e. penalty or service.
     fn create(size: &str, cover: &str) {
         let output_path = match (size, cover) {
-            ("small", "penalty") => "./preprocess/penalty/small.json",
-            ("medium", "penalty") => "./preprocess/penalty/medium.json",
-            ("large", "penalty") => "./preprocess/penalty/large.json",
-            ("small", "service") => "./preprocess/service/small.json",
-            ("medium", "service") => "./preprocess/service/medium.json",
-            ("large", "service") => "./preprocess/service/large.json",
+            ("small", "penalty") => "./preprocess/penalty/small.cfg",
+            ("medium", "penalty") => "./preprocess/penalty/medium.cfg",
+            ("large", "penalty") => "./preprocess/penalty/large.cfg",
+            ("small", "service") => "./preprocess/service/small.cfg",
+            ("medium", "service") => "./preprocess/service/medium.cfg",
+            ("large", "service") => "./preprocess/service/large.cfg",
             _ => panic!("Invalid size or cover")
         };
 
@@ -87,18 +105,16 @@ pub mod preprocess {
 
         assert!(!Path::new(output_path).exists(), "Point preprocessing for {} already exists.", size);
 
-        let mut data: Vec<PointData> = Vec::new();
+        let mut map: HashMap<Point, HashSet<Point>> = HashMap::new();
         for i in 0..dim {
             for j in 0..dim {
                 let p = Point::new(i.into(), j.into());
                 let points_within = Point::points_within_radius(p, r, dim);
-                let mut map = HashMap::new();
                 map.insert(p, points_within);
-                let entry = PointData::new(map);
-                data.push(entry);
             }
         }
-
+        // println!("{:?}", map);
+        let data = PointData::new(map);
         let j = serde_json::to_string(&data).unwrap();
         let mut file = OpenOptions::new()
             .write(true)
@@ -110,20 +126,19 @@ pub mod preprocess {
 
     pub fn load(size: &str, cover: &str) -> HashMap<Point, HashSet<Point>> {
         let input_path = match (size, cover) {
-            ("small", "penalty") => "./preprocess/penalty/small.json",
-            ("medium", "penalty") => "./preprocess/penalty/medium.json",
-            ("large", "penalty") => "./preprocess/penalty/large.json",
-            ("small", "service") => "./preprocess/service/small.json",
-            ("medium", "service") => "./preprocess/service/medium.json",
-            ("large", "service") => "./preprocess/service/large.json",
+            ("small", "penalty") => "./preprocess/penalty/small.cfg",
+            ("medium", "penalty") => "./preprocess/penalty/medium.cfg",
+            ("large", "penalty") => "./preprocess/penalty/large.cfg",
+            ("small", "service") => "./preprocess/service/small.cfg",
+            ("medium", "service") => "./preprocess/service/medium.cfg",
+            ("large", "service") => "./preprocess/service/large.cfg",
             _ => panic!("Invalid size or cover")
         };
 
-        let file = File::open(input_path).expect("Could not open file.");
-        let reader = BufReader::new(file);
-
-        let data: PointData = serde_json::from_reader(reader).unwrap();
-        data.to_map()
+        // let j = fs::read_to_string(Path::new(input_path)).expect("Could not read file.");
+        // let data: HashMap<String, HashMap<String, f64>> = serde_json::from_str(&j).unwrap();
+        // data.to_map()
+        HashMap::new()
     }
 }
 
@@ -179,28 +194,28 @@ impl Point {
 	/// Returns a set of all the grid points within the given radius of the given
 	/// point.
 	pub fn points_within_radius(p: Point, r: u8, dim: u8) -> HashSet<Point> {
-		// let mut result = HashSet::new();
-		// let r = r as i32;
-		// for i in -r..(r + 1) {
-		// 	for j in -r..(r + 1) {
-		// 		if Self::within(r, p.x, p.y, p.x + i, p.y + j, dim) {
-		// 			result.insert(Self::new(p.x + i, p.y + j));
-		// 		}
-		// 	}
-		// }
+		let mut result = HashSet::new();
+		let r = r as i32;
+		for i in -r..(r + 1) {
+			for j in -r..(r + 1) {
+				if Self::within(r, p.x, p.y, p.x + i, p.y + j, dim) {
+					result.insert(Self::new(p.x + i, p.y + j));
+				}
+			}
+		}
 
-		// result
+		result
 
-        let result = match (dim, r) {
-            (30, 8) => PEN_S.get(&p),
-            (50, 10) => PEN_M.get(&p),
-            (100, 14) => PEN_L.get(&p),
-            (30, 3) => SVC_S.get(&p),
-            (50, 3) => SVC_M.get(&p),
-            (100, 3) => SVC_L.get(&p),
-            _ => panic!("Invalid size / radius combination")
-        };
-        result.unwrap().clone()
+        // let result = match (dim, r) {
+        //     (30, 8) => PEN_S.get(&p),
+        //     (50, 10) => PEN_M.get(&p),
+        //     (100, 14) => PEN_L.get(&p),
+        //     (30, 3) => SVC_S.get(&p),
+        //     (50, 3) => SVC_M.get(&p),
+        //     (100, 3) => SVC_L.get(&p),
+        //     _ => panic!("Invalid size / radius combination")
+        // };
+        // result.unwrap().clone()
 	}
 
 	/// Returns whether (x2, y2) is within r units of (x1, y1) and within this

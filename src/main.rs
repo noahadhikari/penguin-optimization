@@ -64,7 +64,7 @@ fn solve_one_input() {
 }
 
 fn solve_all_randomized() {
-	let paths = fs::read_dir("./inputs/medium").unwrap();
+	let paths = fs::read_dir("./inputs/small").unwrap();
 
 	// Will find a better way for this
 	let mut i = 1;
@@ -133,8 +133,8 @@ fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
 	// solve_one_randomized("inputs/test/medium.in", "outputs/test/medium.out", 5);
-	// setup_persistence();
-	solve_all_randomized();
+	setup_persistence();
+	// solve_all_randomized();
 }
 
 // Algorithms
