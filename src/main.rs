@@ -4,6 +4,7 @@
 mod grid;
 mod lp;
 mod solvers;
+mod point;
 use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;

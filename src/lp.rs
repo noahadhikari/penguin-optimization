@@ -29,7 +29,7 @@ use good_lp::{coin_cbc, constraint, variable, variables, Expression, Solution, S
 /// ------------------------------
 ///
 /// total number of variables is on the order of R^2 * d^2.
-use crate::grid::Point;
+use crate::point::Point;
 
 
 pub struct GridProblem {
