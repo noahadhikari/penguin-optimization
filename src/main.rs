@@ -13,14 +13,14 @@ mod point;
 
 //crate imports
 use grid::Grid;
-use point::preprocess::setup_persistence;
+// use point::preprocess::setup_persistence;
 
 
 
 //other imports
 use std::collections::HashMap;
-use std::fmt::Error;
-use std::fs::{DirEntry, File, OpenOptions};
+// use std::fmt::Error;
+use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
@@ -64,7 +64,7 @@ fn solve_one_input() {
 }
 
 fn solve_all_randomized() {
-	let paths = fs::read_dir("./inputs/small").unwrap();
+	let paths = fs::read_dir("./inputs/large").unwrap();
 
 	// Will find a better way for this
 	let mut i = 1;
@@ -86,7 +86,7 @@ fn solve_all_randomized() {
 		let real_path = path.unwrap().path();
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
-		let output_path = "./outputs/".to_string() + "medium/" + test_number + ".out";
+		let output_path = "./outputs/".to_string() + "large/" + test_number + ".out";
 		solve_one_randomized(input_path, &output_path, 10);
 
 		i += 1;
@@ -133,8 +133,8 @@ fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
 	// solve_one_randomized("inputs/test/medium.in", "outputs/test/medium.out", 5);
-	setup_persistence();
-	// solve_all_randomized();
+	// setup_persistence();
+	solve_all_randomized();
 }
 
 // Algorithms
