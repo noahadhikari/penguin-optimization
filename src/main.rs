@@ -3,10 +3,9 @@
 
 mod grid;
 mod lp;
-use std::collections::{HashMap, HashSet};
-use std::fs;
-use std::fs::{File, OpenOptions};
-use std::hash::Hash;
+mod solvers;
+use std::collections::HashSet;
+use std::fs::{File, OpenOptions, self};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -15,12 +14,14 @@ use clap::{Parser, Subcommand};
 use grid::Grid;
 use phf::phf_map;
 use stopwatch::Stopwatch;
+use solvers::*;
 
 // Define solver functions
 
-static SOLVERS: phf::Map<&'static str, fn()> = phf_map! {
-	"test" => solve_one_input,
-	"test1" => solve_one_input,
+type SolverFn = fn(&Grid, &mut Grid);
+
+static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
+	"greedy" => benchmark_greedy,
 };
 
 
@@ -44,7 +45,7 @@ enum Commands {
 	Solve {
 		/// Solver to use
 		#[clap(short, parse(try_from_str=get_solver))]
-		solver: fn(),
+		solver: SolverFn,
 
 		/// Inputs to the solver <size>/<id>
 		///
@@ -67,15 +68,22 @@ fn main() {
 		Commands::Solve { solver, paths } => {
 			// Collapse the multiple paths given into one set
 			let path_list: HashSet<&PathBuf> = HashSet::from_iter(paths.iter().map(|vec| vec.iter()).flatten());
+			// TODO: Maintain input order and use a different method to prevent multiple inputs from the same file
 
 			// TODO: Make this parallel
 			// Run the solver on each input
+			for path in path_list {
+				// let grid = Grid::from_file(path);
+				println!("{:?}", path);
+				let grid = get_grid(path.to_str().unwrap())
+					.expect(format!("Failed to load grid from {}", path.to_str().unwrap()).as_str());
+				let mut sol = grid.clone();
 
+				solver(&grid, &mut sol);
+				// println!("{:#}", sol);
+				// println!("{:#}", grid);
 
-			for p in path_list {
-				println!("{:?}", p);
 			}
-			// solver();
 		}
 	}
 }
@@ -169,7 +177,7 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 }
 
 // Validates and converts a string to a solver function
-fn get_solver(solver: &str) -> Result<fn(), String> {
+fn get_solver(solver: &str) -> Result<SolverFn, String> {
 	SOLVERS
 		.get(solver)
 		.cloned()
@@ -272,21 +280,6 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 
 
 // Algorithms
-
-/// Greedy algorithm for benchmarking.
-/// Places towers at all city locations that haven't been covered
-fn place_at_cities(grid: &mut Grid) {
-	let cities = grid.get_cities().clone();
-	let city_points = cities.keys();
-	println!("{:?}", city_points);
-	for point in city_points {
-		let covered = grid.get_cities().get(point).unwrap();
-		if covered.len() > 0 {
-			continue;
-		}
-		grid.add_tower(point.get_x(), point.get_y());
-	}
-}
 
 /// Returns the grid created from the passed in input file.
 fn get_grid(path: &str) -> io::Result<Grid> {
