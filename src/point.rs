@@ -21,7 +21,7 @@ pub mod preprocess {
 	use super::*;
 
 
-    /// Writes out the preprocessing data for all combinations of size and cover.
+	/// Writes out the preprocessing data for all combinations of size and cover.
 	pub fn setup_persistence() {
 		let options = vec![
 			("small", "penalty"),
@@ -84,7 +84,8 @@ pub mod preprocess {
 		file.write_all(s.as_bytes()).unwrap();
 	}
 
-    /// Loads the preprocessed points for the given size (small, medium, large) and cover, i.e. penalty or service
+	/// Loads the preprocessed points for the given size (small, medium, large)
+	/// and cover, i.e. penalty or service
 	pub fn load(size: &str, cover: &str) -> HashMap<Point, HashSet<Point>> {
 		let input_path = match (size, cover) {
 			("small", "penalty") => "./preprocess/penalty/small.txt",
@@ -108,7 +109,7 @@ pub mod preprocess {
 		let mut within: HashSet<Point> = HashSet::new();
 		let mut found = false;
 		use regex::Regex;
-        // Regex pattern matching points (x, y)
+		// Regex pattern matching points (x, y)
 		let re = Regex::new(r"\((\d+), (\d+)\)").unwrap();
 
 		for line in reader.lines() {
