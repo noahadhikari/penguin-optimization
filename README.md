@@ -20,7 +20,7 @@
 
 ## Requirements
 
-It is recommended to use Linux or [WSL](https://docs.microsoft.com/en-us/learn/modules/get-started-with-windows-subsystem-for-linux/) since we use [coin-or cbc](https://www.coin-or.org/Cbc/), which is eaiser to set up on Linux.
+It is recommended to use Linux or [WSL](https://docs.microsoft.com/en-us/learn/modules/get-started-with-windows-subsystem-for-linux/) since we use [coin-or cbc](https://www.coin-or.org/Cbc/), which is easier to set up on Linux.
 
 First, install Rust using `rustup` by following the [instructions on the website](https://www.rust-lang.org/tools/install
 ), by running
