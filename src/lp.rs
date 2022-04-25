@@ -156,7 +156,7 @@ impl GridProblem {
 	pub fn tower_solution(self) -> HashSet<Point> {
 		const TOL: f64 = 1e-6;
 		let d = self.dim as usize;
-		let t = self.t.clone();
+		let t = (&self.t).clone();
 		let solution = self.solution();
 		let mut result = HashSet::new();
 		for i in 0..d {
