@@ -88,8 +88,8 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	let mut grid = get_grid(input_path).unwrap();
-    let mut best_towers_so_far = HashMap::new();
-    let sw = Stopwatch::start_new();
+	let mut best_towers_so_far = HashMap::new();
+	let sw = Stopwatch::start_new();
 	// For every file:
 
 	let mut i = 0;
