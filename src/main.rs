@@ -59,30 +59,30 @@ fn solve_one_input() {
 }
 
 fn solve_all_randomized() {
-	let paths = fs::read_dir("./inputs/large").unwrap();
+	let paths = fs::read_dir("./inputs/small").unwrap();
 
 	// Will find a better way for this
 	let mut i = 1;
 	for path in paths {
 		// There's probably a much better way to do this
-		match i {
-			1..=10 => {
-				// Uncomment for 11-20
-				// i += 1;
-				// continue
-			}
-			11..=20 => {
-				// Comment out for 11-20
-				continue;
-			}
-			_ => return,
-		}
+		// match i {
+		// 	1..=10 => {
+		// 		// Uncomment for 11-20
+		// 		// i += 1;
+		// 		// continue
+		// 	}
+		// 	11..=20 => {
+		// 		// Comment out for 11-20
+		// 		continue;
+		// 	}
+		// 	_ => return,
+		// }
 
 		let real_path = path.unwrap().path();
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
-		let output_path = "./outputs/".to_string() + "large/" + test_number + ".out";
-		solve_one_randomized(input_path, &output_path, 10);
+		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
+		solve_one_randomized(input_path, &output_path, 60);
 
 		i += 1;
 	}
@@ -128,9 +128,9 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
-	solve_one_randomized("inputs/large/001.in", "outputs/large/001.out", 300);
+	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
-	// solve_all_randomized();
+	solve_all_randomized();
 }
 
 // Algorithms
