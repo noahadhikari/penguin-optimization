@@ -106,32 +106,31 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 
 	let mut i = 0;
 	while sw.elapsed().as_secs() < secs_per_input {
-		// 5 mins
 		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
-		println!("{} penalty: {}", i, p);
+		// println!("{} penalty: {}", i, p);
 		if p < best_penalty_so_far {
 			best_penalty_so_far = p;
 			best_towers_so_far = grid.get_towers_ref().clone();
+			write_sol(&grid, output_path);
 		}
 
-		// let time = sw.elapsed().as_secs();
-		// if sw.elapsed().as_secs() % 10 == 0 {
-		// 	println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
-		// }
+		let time = sw.elapsed().as_secs();
+		if sw.elapsed().as_secs() % 10 == 0 {
+			println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
+		}
 		i += 1;
 	}
 	println!("Best: {}", best_penalty_so_far);
-	// println!("Valid: {}", best_grid_so_far.is_valid());
+	println!("Valid: {}", grid.is_valid());
 	grid.replace_all_towers(best_towers_so_far);
-	write_sol(&grid, output_path);
 }
 
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
-	// solve_one_randomized("inputs/test/medium.in", "outputs/test/medium.out", 5);
+	solve_one_randomized("inputs/large/001.in", "outputs/large/001.out", 300);
 	// setup_persistence();
-	solve_all_randomized();
+	// solve_all_randomized();
 }
 
 // Algorithms
