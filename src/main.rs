@@ -84,7 +84,8 @@ fn solve_all_randomized() {
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
 		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
-		solve_one_randomized(&get_grid(input_path).unwrap(), &output_path, 60);
+		// solve_one_randomized(&get_grid(input_path).unwrap(), &output_path, 60);
+		solve_one_random_threaded(&input_path, &output_path, 60);
 
 		i += 1;
 	}
@@ -140,8 +141,9 @@ fn main() {
 	// solve_one_input();
 	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
-	solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out", 60);
-	// solve_all_randomized();
+	// solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out", 60);
+	solve_all_randomized();
+	
 }
 
 // Algorithms
