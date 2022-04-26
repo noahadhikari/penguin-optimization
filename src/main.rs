@@ -233,12 +233,15 @@ struct Scores {
 #[tokio::main]
 pub async fn get_small_result() {
 	let small_count: u8 = 241;
-	for i in 235..=small_count {
+	for i in 1..=small_count {
+		if i == 240 { // 240 is invalid
+			continue;
+		}
 		// let our_path  = "./outputs/small/".to_string() + &i.to_string() + ".in";
 		let highest_score = get_highest_leaderboard_score(i).await;
 		match highest_score {
 			Ok(score) => {
-				println!("{:?}", score);
+				println!("{} : {:?}", i, score);
 			},
 			Err(e) => panic!("{}", e),
 		}
@@ -306,10 +309,20 @@ pub async fn get_highest_leaderboard_score(test_num: u8) -> Result<f64, String>{
 		match res.status() {
 			reqwest::StatusCode::OK => {
 				match res.json::<APIResponse>().await {
-					Ok(parsed) => return Ok(parsed.Entries.get(0).unwrap().TeamScore),
+					Ok(parsed) => {
+						return Ok(get_min_score(parsed.Entries));
+					},
 					Err(_) => return Err("The response didn't match the shape we expected.".to_string()),
 				};
 			}
 			other => return Err("Other error occurred".to_string() + other.as_str()),
 		}
+}
+
+fn get_min_score(scores: Vec<Scores>) -> f64 {
+	let mut cur_min = f64::MAX;
+	for score in scores {
+		cur_min = cur_min.min(score.TeamScore);
+	}
+	cur_min
 }
