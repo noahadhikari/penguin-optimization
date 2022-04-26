@@ -19,10 +19,11 @@ use stopwatch::Stopwatch;
 
 // Define solver functions
 
-type SolverFn = fn(&Grid, &mut Grid);
+type SolverFn = fn(&mut Grid);
 
 static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
-	"greedy" => benchmark_greedy,
+	"benchmark" => benchmark_greedy,
+	"greedy" => greedy,
 };
 
 
@@ -64,26 +65,26 @@ fn main() {
 		// -- LIST --
 		Commands::List => {
 			println!("List of solvers:");
+			for (name, _) in SOLVERS.entries() {
+				println!("\t{}", name);
+			}
 		}
 		// -- SOLVE --
 		Commands::Solve { solver, paths } => {
 			// Collapse the multiple paths given into one set
 			let path_list: HashSet<&PathBuf> = HashSet::from_iter(paths.iter().map(|vec| vec.iter()).flatten());
-			// TODO: Maintain input order and use a different method to prevent multiple
-			// inputs from the same file
+			// TODO: Maintain input order and use a different method to prevent multiple duplicate inputs
 
 			// TODO: Make this parallel
 			// Run the solver on each input
 			for path in path_list {
 				// let grid = Grid::from_file(path);
 				println!("{:?}", path);
-				let grid = get_grid(path.to_str().unwrap())
+				let mut grid = get_grid(path.to_str().unwrap())
 					.expect(format!("Failed to load grid from {}", path.to_str().unwrap()).as_str());
-				let mut sol = grid.clone();
 
-				solver(&grid, &mut sol);
-				// println!("{:#}", sol);
-				// println!("{:#}", grid);
+				solver(&mut grid);
+				println!("{}", grid.penalty());
 			}
 		}
 	}

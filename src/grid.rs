@@ -221,6 +221,18 @@ impl Grid {
 		&self.cities
 	}
 
+	pub fn service_radius(&self) -> u8 {
+		self.service_radius
+	}
+
+	pub fn penalty_radius(&self) -> u8 {
+		self.penalty_radius
+	}
+
+	pub fn dimension(&self) -> u8 {
+		self.dimension
+	}
+
 	pub fn set_service_radius(&mut self, serv_radius: u8) {
 		self.service_radius = serv_radius;
 	}
