@@ -1,16 +1,29 @@
 // Used to ignore unused code warnings.
 #![allow(dead_code)]
 
+// extern crates
+#[macro_use]
+extern crate lazy_static;
+
+
 mod grid;
 mod lp;
-use std::fmt::Error;
-use std::fs;
-use std::fs::{DirEntry, File, OpenOptions};
+mod point;
+
+// crate imports
+// use point::preprocess::setup_persistence;
+
+// other imports
+use std::collections::HashMap;
+// use std::fmt::Error;
+use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
+use std::{fs, u32};
 
 use grid::Grid;
+use rand::{thread_rng, Rng};
 use stopwatch::Stopwatch;
 
 fn solve_all_inputs() {
@@ -46,7 +59,7 @@ fn solve_one_input() {
 }
 
 fn solve_all_randomized() {
-	let paths = fs::read_dir("./inputs/medium").unwrap();
+	let paths = fs::read_dir("./inputs/large").unwrap();
 
 	// Will find a better way for this
 	let mut i = 1;
@@ -68,7 +81,7 @@ fn solve_all_randomized() {
 		let real_path = path.unwrap().path();
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
-		let output_path = "./outputs/".to_string() + "medium/" + test_number + ".out";
+		let output_path = "./outputs/".to_string() + "large/" + test_number + ".out";
 		solve_one_randomized(input_path, &output_path, 10);
 
 		i += 1;
@@ -86,35 +99,38 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	use rand::{thread_rng, Rng};
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
-	let mut best_grid_so_far = Grid::new(0, 0, 0);
+	let mut grid = get_grid(input_path).unwrap();
+	let mut best_towers_so_far = HashMap::new();
 	let sw = Stopwatch::start_new();
 	// For every file:
-	// let mut i = 0;
+
+	let mut i = 0;
 	while sw.elapsed().as_secs() < secs_per_input {
 		// 5 mins
-		let mut grid = get_grid(input_path).unwrap(); // Need a way to move this out
-		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=MAX));
-		// println!("{} penalty: {}", i, p);
+		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
+		println!("{} penalty: {}", i, p);
 		if p < best_penalty_so_far {
-			best_penalty_so_far = best_penalty_so_far.min(p);
-			best_grid_so_far = grid;
+			best_penalty_so_far = p;
+			best_towers_so_far = grid.get_towers_ref().clone();
 		}
 
 		// let time = sw.elapsed().as_secs();
 		// if sw.elapsed().as_secs() % 10 == 0 {
 		// 	println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
 		// }
-		// i += 1;
+		i += 1;
 	}
 	println!("Best: {}", best_penalty_so_far);
 	// println!("Valid: {}", best_grid_so_far.is_valid());
-	write_sol(&best_grid_so_far, output_path);
+	grid.replace_all_towers(best_towers_so_far);
+	write_sol(&grid, output_path);
 }
 
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
-	// solve_one_randomized();
+	// solve_one_randomized("inputs/test/medium.in", "outputs/test/medium.out", 5);
+	// setup_persistence();
 	solve_all_randomized();
 }
 
@@ -123,11 +139,11 @@ fn main() {
 /// Greedy algorithm for benchmarking.
 /// Places towers at all city locations that haven't been covered
 fn place_at_cities(grid: &mut Grid) {
-	let cities = grid.get_cities().clone();
+	let cities = grid.get_cities_ref().clone();
 	let city_points = cities.keys();
 	println!("{:?}", city_points);
 	for point in city_points {
-		let covered = grid.get_cities().get(point).unwrap();
+		let covered = grid.get_cities_ref().get(point).unwrap();
 		if covered.len() > 0 {
 			continue;
 		}
