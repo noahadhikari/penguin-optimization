@@ -84,18 +84,19 @@ fn solve_all_randomized() {
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
 		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
-		solve_one_randomized(get_grid(input_path).unwrap(), &output_path, 60);
+		solve_one_randomized(&get_grid(input_path).unwrap(), &output_path, 60);
 
 		i += 1;
 	}
 }
 
-fn solve_one_randomized(mut grid: Grid, output_path: &str, secs_per_input: u64) {
+fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64) {
 	// const INPUT_PATH: &str = "./inputs/medium/001.in";
 	// const OUTPUT_PATH: &str = "./outputs/medium/001.out";
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
+	let mut grid = grid_orig.clone();
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	// let mut grid = get_grid(input_path).unwrap();
@@ -124,8 +125,14 @@ fn solve_one_randomized(mut grid: Grid, output_path: &str, secs_per_input: u64) 
 	grid.replace_all_towers(best_towers_so_far);
 }
 
-fn solve_one_random_threaded() {
-
+fn solve_one_random_threaded(input_path: &str, output_path: &str, secs_per_input: u64) {
+	let grid = get_grid(input_path).unwrap();
+	let num_cpus = num_cpus::get();
+	let mut grids = vec![];
+	for _ in 0..num_cpus {
+		grids.push(&grid);
+	}
+	grids.par_iter().map(|g| solve_one_randomized(g, output_path, secs_per_input)).collect_into_vec(&mut vec![]);
 }
 
 fn main() {
@@ -133,7 +140,8 @@ fn main() {
 	// solve_one_input();
 	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
-	solve_all_randomized();
+	solve_one_random_threaded("inputs/large/050.in", "outputs/large/050.out", 60);
+	// solve_all_randomized();
 }
 
 // Algorithms
