@@ -4,7 +4,7 @@
 // extern crates
 #[macro_use]
 extern crate lazy_static;
-
+extern crate num_cpus;
 
 mod grid;
 mod lp;
@@ -12,8 +12,9 @@ mod point;
 
 // crate imports
 // use point::preprocess::setup_persistence;
+use grid::Grid;
 
-// other imports
+// std imports
 use std::collections::HashMap;
 // use std::fmt::Error;
 use std::fs::{File, OpenOptions};
@@ -22,7 +23,8 @@ use std::io::{self, BufReader, Write};
 use std::path::Path;
 use std::{fs, u32};
 
-use grid::Grid;
+//other imports
+use rayon::prelude::*;
 use rand::{thread_rng, Rng};
 use stopwatch::Stopwatch;
 
@@ -82,24 +84,21 @@ fn solve_all_randomized() {
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
 		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
-		solve_one_randomized(input_path, &output_path, 60);
+		solve_one_randomized(get_grid(input_path).unwrap(), &output_path, 60);
 
 		i += 1;
 	}
 }
 
-fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64) {
+fn solve_one_randomized(mut grid: Grid, output_path: &str, secs_per_input: u64) {
 	// const INPUT_PATH: &str = "./inputs/medium/001.in";
 	// const OUTPUT_PATH: &str = "./outputs/medium/001.out";
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
-	use std::u32::MAX;
-
-	use rand::{thread_rng, Rng};
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
-	let mut grid = get_grid(input_path).unwrap();
+	// let mut grid = get_grid(input_path).unwrap();
 	let mut best_towers_so_far = HashMap::new();
 	let sw = Stopwatch::start_new();
 	// For every file:
@@ -123,6 +122,10 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	println!("Best: {}", best_penalty_so_far);
 	println!("Valid: {}", grid.is_valid());
 	grid.replace_all_towers(best_towers_so_far);
+}
+
+fn solve_one_random_threaded() {
+
 }
 
 fn main() {
