@@ -94,7 +94,9 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
+	use std::u32::MAX;
 
+	use rand::{thread_rng, Rng};
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	let mut grid = get_grid(input_path).unwrap();

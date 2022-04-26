@@ -20,15 +20,15 @@
 
 ## Requirements
 
-It is recommended to use Linux or [WSL](https://docs.microsoft.com/en-us/learn/modules/get-started-with-windows-subsystem-for-linux/) since we use [coin-or cbc](https://www.coin-or.org/Cbc/), which is easer to setup in linux.
+It is recommended to use Linux or [WSL](https://docs.microsoft.com/en-us/learn/modules/get-started-with-windows-subsystem-for-linux/) since we use [coin-or cbc](https://www.coin-or.org/Cbc/), which is easier to set up on Linux.
 
-First install rust by using `rustup` by following the [instructions on the website](https://www.rust-lang.org/tools/install
+First, install Rust using `rustup` by following the [instructions on the website](https://www.rust-lang.org/tools/install
 ), by running
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-Next install `coin-or cbc`, the LP solver we currently use by either running the below (for linux) or following the [instructions on their github](https://github.com/coin-or/Cbc)
+Next, install `coin-or cbc`, the LP solver we currently use by either running the below (for Linux) or following the [instructions on their repo](https://github.com/coin-or/Cbc)
 ```bash
 sudo apt-get install coinor-cbc coinor-libcbc-dev
 ```
