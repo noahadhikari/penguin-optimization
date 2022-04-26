@@ -97,7 +97,7 @@ fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
-	let mut grid = grid_orig.clone();
+	let mut grid = (*grid_orig).clone();
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	// let mut grid = get_grid(input_path).unwrap();
@@ -105,7 +105,7 @@ fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64
 	let sw = Stopwatch::start_new();
 	// For every file:
 
-	let mut i = 0;
+	// let mut i = 0;
 	while sw.elapsed().as_secs() < secs_per_input {
 		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
 		// println!("{} penalty: {}", i, p);
@@ -119,7 +119,7 @@ fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64
 		if sw.elapsed().as_secs() % 10 == 0 {
 			println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
 		}
-		i += 1;
+		// i += 1;
 	}
 	println!("Best: {}", best_penalty_so_far);
 	println!("Valid: {}", grid.is_valid());
@@ -127,19 +127,18 @@ fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64
 }
 
 fn solve_one_random_threaded(input_path: &str, output_path: &str, secs_per_input: u64) {
-	let grid = get_grid(input_path).unwrap();
-	let num_cpus = num_cpus::get();
+	
 	let mut grids = vec![];
-	for _ in 0..num_cpus {
-		grids.push(&grid);
+	for _ in 0..(num_cpus::get()) {
+		let grid = get_grid(input_path).unwrap();
+		grids.push(grid);
 	}
-	grids.par_iter().map(|g| solve_one_randomized(g, output_path, secs_per_input)).collect_into_vec(&mut vec![]);
+	grids.par_iter().for_each(|g| solve_one_randomized(g, output_path, secs_per_input));
 }
 
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
-	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
 	// solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out", 60);
 	solve_all_randomized();
