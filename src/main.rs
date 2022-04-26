@@ -25,6 +25,8 @@ use std::{fs, u32};
 use grid::Grid;
 use rand::{thread_rng, Rng};
 use stopwatch::Stopwatch;
+use reqwest;
+use serde::{Deserialize, Serialize};
 
 fn solve_all_inputs() {
 	const CUTOFF_TIME: u32 = 500000; // max time in seconds
@@ -130,7 +132,8 @@ fn main() {
 	// solve_one_input();
 	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
-	solve_all_randomized();
+	// solve_all_randomized();
+	get_small_result();
 }
 
 // Algorithms
@@ -215,20 +218,98 @@ fn write_sol(grid: &Grid, path: &str) {
 	f.write_all(data.as_bytes()).expect("Unable to write data");
 }
 
-pub fn get_small_result() -> Result<(), String> {
-	let small_count: u8 = 241;
-	for i in 1..=small_count {
-		let our_path  = "./outputs/small/".to_string() + &i.to_string() + ".in";
-		if Path::new(&our_path).is_file() {
-			return Err("File not found".to_string());
-		}
-		let our_penalty = get_penalty_from_file(our_path.as_str());
 
-		let get_url = "https://project.cs170.dev/scoreboard/small/".to_string() + &i.to_string();
+#[derive(Serialize, Deserialize, Debug)]
+struct APIResponse {
+	Entries: Vec<Scores>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Scores {
+	TeamName: String,
+	TeamScore: f64,
+}
+
+#[tokio::main]
+pub async fn get_small_result() {
+	let small_count: u8 = 241;
+	for i in 235..=small_count {
+		// let our_path  = "./outputs/small/".to_string() + &i.to_string() + ".in";
+		let highest_score = get_highest_leaderboard_score(i).await;
+		match highest_score {
+			Ok(score) => {
+				println!("{:?}", score);
+			},
+			Err(e) => panic!("{}", e),
+		}
+	}
+
+		// if Path::new(&our_path).is_file() {
+			// return Err("File not found".to_string());
+		// }
+		// let our_penalty = get_penalty_from_file(our_path.as_str());
+
+		// let get_url = "https://project.cs170.dev/scoreboard/small/".to_string() + &i.to_string();
+		// let res = reqwest::get(get_url)
+		// 	.await
+		// 	.unwrap();
+			
+		// match res.status() {
+		// 	reqwest::StatusCode::OK => {
+		// 		match res.json::<APIResponse>().await {
+		// 			Ok(parsed) => {
+		// 				// println!("Success! {:?}", parsed);
+		// 				let x = parsed.Entries.get(0).unwrap().TeamScore;
+		// 				println!("{:?}", x);
+		// 			}
+		// 			Err(_) => println!("Hm, the response didn't match the shape we expected."),
+		// 		};
+		// 	}
+		// 	other => {
+    //     panic!("Uh oh! Something unexpected happened: {:?}", other);
+		// 	}
+		// }
+		
+		
+		// println!("{:?}", result)
+		// println!("{}", get_url);
+		// let client = reqwest::Client::new();
+		// let response = client
+		// 		.get(get_url)
+		// 		.send()
+		// 		.await
+		// 		.unwrap();
+		// println!("Success! {:?}", response);
+
 		// GET their response from get_url
+		// let body = reqwest::get("https://www.rust-lang.org")
+    // .await?
+    // .text()
+    // .await?;
+
 		
 		// Maybe use serde_json to parse: https://stackoverflow.com/questions/30292752/how-do-i-parse-a-json-file	
 		// sort by TeamScore and compare our_penalty with it. If it's less than, add info to a vector. 
-	}	
-	Ok(()) // Return the vector
+	// }	
+	// Ok(()) // Return the vector
+}
+
+/// Only for small for now
+// #[tokio::main]
+pub async fn get_highest_leaderboard_score(test_num: u8) -> Result<f64, String>{
+	let get_url: String = "https://project.cs170.dev/scoreboard/small/".to_string() + &test_num.to_string();
+
+	let res = reqwest::get(get_url)
+			.await
+			.unwrap();
+			
+		match res.status() {
+			reqwest::StatusCode::OK => {
+				match res.json::<APIResponse>().await {
+					Ok(parsed) => return Ok(parsed.Entries.get(0).unwrap().TeamScore),
+					Err(_) => return Err("The response didn't match the shape we expected.".to_string()),
+				};
+			}
+			other => return Err("Other error occurred".to_string() + other.as_str()),
+		}
 }
