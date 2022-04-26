@@ -185,15 +185,20 @@ fn get_grid(path: &str) -> io::Result<Grid> {
 	Ok(g)
 }
 
+fn get_penalty_from_file(path: &str) -> f64 {
+	let file = File::open(path).unwrap();
+	let reader = BufReader::new(file);
+	let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
+	let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
+	let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
+	let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
+	existing_penalty
+}
+
 fn write_sol(grid: &Grid, path: &str) {
 	// Only overwrite if solution is better than what we currently have
 	if Path::new(path).is_file() {
-		let file = File::open(path).unwrap();
-		let reader = BufReader::new(file);
-		let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
-		let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
-		let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
-		let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
+		let existing_penalty = get_penalty_from_file(path);
 
 		if grid.penalty() >= existing_penalty {
 			return;
@@ -208,4 +213,22 @@ fn write_sol(grid: &Grid, path: &str) {
 		.open(path)
 		.expect("Unable to open file");
 	f.write_all(data.as_bytes()).expect("Unable to write data");
+}
+
+pub fn get_small_result() -> Result<(), String> {
+	let small_count: u8 = 241;
+	for i in 1..=small_count {
+		let our_path  = "./outputs/small/".to_string() + &i.to_string() + ".in";
+		if Path::new(&our_path).is_file() {
+			return Err("File not found".to_string());
+		}
+		let our_penalty = get_penalty_from_file(our_path.as_str());
+
+		let get_url = "https://project.cs170.dev/scoreboard/small/".to_string() + &i.to_string();
+		// GET their response from get_url
+		
+		// Maybe use serde_json to parse: https://stackoverflow.com/questions/30292752/how-do-i-parse-a-json-file	
+		// sort by TeamScore and compare our_penalty with it. If it's less than, add info to a vector. 
+	}	
+	Ok(()) // Return the vector
 }
