@@ -140,7 +140,7 @@ fn main() {
 	// solve_one_input();
 	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
-	solve_one_random_threaded("inputs/large/050.in", "outputs/large/050.out", 60);
+	solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out", 60);
 	// solve_all_randomized();
 }
 
