@@ -9,6 +9,7 @@ extern crate lazy_static;
 mod grid;
 mod lp;
 mod point;
+mod api;
 
 // crate imports
 // use point::preprocess::setup_persistence;
@@ -21,12 +22,10 @@ use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
 use std::{fs, u32};
+use api::{get_api_result, InputType, get_penalty_from_file};
 
 use grid::Grid;
-use rand::{thread_rng, Rng};
 use stopwatch::Stopwatch;
-use reqwest;
-use serde::{Deserialize, Serialize};
 
 fn solve_all_inputs() {
 	const CUTOFF_TIME: u32 = 500000; // max time in seconds
@@ -96,8 +95,6 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
-	use std::u32::MAX;
-
 	use rand::{thread_rng, Rng};
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
@@ -127,19 +124,13 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	grid.replace_all_towers(best_towers_so_far);
 }
 
-pub enum InputSize {
-	Small,
-	Medium,
-	Large,
-}
-
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
 	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
 	// solve_all_randomized();
-	get_api_result(InputSize::Small);
+	get_api_result(InputType::Small);
 }
 
 // Algorithms
@@ -194,21 +185,12 @@ fn get_grid(path: &str) -> io::Result<Grid> {
 	Ok(g)
 }
 
-fn get_penalty_from_file(path: &str) -> f64 {
-	let file = File::open(path).unwrap();
-	let reader = BufReader::new(file);
-	let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
-	let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
-	let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
-	let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
-	existing_penalty
-}
 
 fn write_sol(grid: &Grid, path: &str) {
 	// Only overwrite if solution is better than what we currently have
 	if Path::new(path).is_file() {
 		let existing_penalty = get_penalty_from_file(path);
-
+		
 		if grid.penalty() >= existing_penalty {
 			return;
 		}
@@ -222,124 +204,4 @@ fn write_sol(grid: &Grid, path: &str) {
 		.open(path)
 		.expect("Unable to open file");
 	f.write_all(data.as_bytes()).expect("Unable to write data");
-}
-
-// API
-
-#[derive(Serialize, Deserialize, Debug)]
-struct APIResponse {
-	Entries: Vec<Scores>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Scores {
-	TeamName: String,
-	TeamScore: f64,
-}
-
-#[tokio::main]
-pub async fn get_api_result(size: InputSize) {
-	let mut input_size = "";
-	// { test_number: (our_score, leaderboard_score), ... }
-	let mut worse_scores: HashMap<u8, Vec<f64>> = HashMap::new();
-	let mut better_scores: HashMap<u8, Vec<f64>> = HashMap::new();
-
-	// Maps to directory name
-	match size {
-		InputSize::Small => input_size = "small",
-		InputSize::Medium => input_size = "medium",
-		InputSize::Large => input_size = "large",
-		_ => panic!("Not a valid input size"),
-	}
-
-	// Tests in each size
-	let input_count: HashMap<&str, u8> = HashMap::from([
-		("small", 241),
-		("medium", 239),
-		("large", 239),
-	]);
-
-	let count = *input_count.get(input_size).unwrap();
-	for i in 1..=count {
-		if i == 240 && input_size == "small"  { // small/240 is invalid
-			continue;
-		}
-		let highest_score = get_highest_leaderboard_score(i).await;
-		match highest_score {
-			Err(e) => panic!("{}", e),
-			Ok(leaderboard_penalty) => {
-				// Found highest leaderboard score
-				println!("{} : {:?}", i, leaderboard_penalty);
-				let our_path  = "./outputs/small/".to_string() + &get_three_digit_num(i) + ".out";
-				// We don't have an output file
-				if !Path::new(&our_path).is_file() {
-					println!("Local test {} not found", i.to_string());
-					continue;
-				}
-
-				let our_penalty= round(get_penalty_from_file(our_path.as_str()));
-				let rounded_leaderboard = round(leaderboard_penalty);
-
-				if our_penalty > rounded_leaderboard {
-					worse_scores.insert(i, vec![our_penalty, rounded_leaderboard]);
-				} else if our_penalty < rounded_leaderboard {
-					better_scores.insert(i, vec![our_penalty, rounded_leaderboard]);
-				}
-			},
-		}
-	}	
-	
-	println!("Better:");
-	for (key, value) in better_scores {
-    println!("Test {}. Ours: {}. Best: {}", key, value[0], value[1]);
-	}
-
-	println!("Worse:");
-	for (key, value) in worse_scores {
-    println!("Test {}. Ours: {}. Best: {}", key, value[0], value[1]);
-	}
-}
-
-/// Rounds number to 6 decimal places to avoid floating point errors
-fn round(n: f64) -> f64 {
-	(n * 1000000.0).round() / 1000000.0
-}
-
-fn get_three_digit_num(n: u8) -> String {
-	if n >= 100 {
-		return n.to_string();
-	} else if n >= 10 {
-		return "0".to_string() + &n.to_string();
-	} else {
-		return "00".to_string() + &n.to_string();
-	}
-}
-
-// #[tokio::main]
-pub async fn get_highest_leaderboard_score(test_num: u8) -> Result<f64, String>{
-	let get_url: String = "https://project.cs170.dev/scoreboard/small/".to_string() + &test_num.to_string();
-
-	let res = reqwest::get(get_url)
-			.await
-			.unwrap();
-			
-		match res.status() {
-			reqwest::StatusCode::OK => {
-				match res.json::<APIResponse>().await {
-					Ok(parsed) => {
-						return Ok(get_min_score(parsed.Entries));
-					},
-					Err(_) => return Err("The response didn't match the shape we expected.".to_string()),
-				};
-			}
-			other => return Err("Other error occurred".to_string() + other.as_str()),
-		}
-}
-
-fn get_min_score(scores: Vec<Scores>) -> f64 {
-	let mut cur_min = f64::MAX;
-	for score in scores {
-		cur_min = cur_min.min(score.TeamScore);
-	}
-	cur_min
 }
