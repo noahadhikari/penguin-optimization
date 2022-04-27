@@ -79,18 +79,30 @@ pub async fn get_api_result(size: InputType) {
 	println!("\n\n\n\n");
 	println!("{} Better:", better_scores.len());
 	for (key, (ours, leaderboard)) in better_scores {
-		println!("Test {}. Ours: {}. Best: {}. Diff: {}", format!("{:0>3}", key), ours, leaderboard, round(leaderboard - ours));
+		println!(
+			"Test {}. Ours: {}. Best: {}. Diff: {}",
+			format!("{:0>3}", key),
+			ours,
+			leaderboard,
+			round(leaderboard - ours)
+		);
 	}
 
 	println!("\n{} Worse:", worse_scores.len());
 	for (key, (ours, leaderboard)) in sort_by_diff(worse_scores) {
-		println!("Test {}. Ours: {}. Best: {}. Diff: {}", format!("{:0>3}", key), ours, leaderboard, round(ours - leaderboard));
+		println!(
+			"Test {}. Ours: {}. Best: {}. Diff: {}",
+			format!("{:0>3}", key),
+			ours,
+			leaderboard,
+			round(ours - leaderboard)
+		);
 	}
 }
 
 fn sort_by_diff(scores: HashMap<u8, (f64, f64)>) -> Vec<(u8, (f64, f64))> {
 	let mut vec = scores.into_iter().collect::<Vec<(u8, (f64, f64))>>();
-	vec.sort_by(|a, b| (a.1.1 - a.1.0).partial_cmp(&(b.1.1 - b.1.0)).unwrap());
+	vec.sort_by(|a, b| (a.1 .1 - a.1 .0).partial_cmp(&(b.1 .1 - b.1 .0)).unwrap());
 	vec
 }
 
