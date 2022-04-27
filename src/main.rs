@@ -10,6 +10,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
+use std::process::Output;
 
 use clap::{Parser, Subcommand};
 use grid::Grid;
@@ -52,8 +53,8 @@ enum Commands {
 		/// Inputs to the solver <size>/<id>
 		///
 		/// large/1..4 OR large OR large/1..4 small/5
-		#[clap(required = true,	parse(try_from_str=get_input_paths))]
-		paths: Vec<Vec<PathBuf>>,
+		#[clap(required = true,	parse(try_from_str=get_paths))]
+		paths: Vec<Vec<(PathBuf, PathBuf)>>,
 		// Vec allows for multiple inputs in the after the solver name
 	},
 }
@@ -71,20 +72,30 @@ fn main() {
 		}
 		// -- SOLVE --
 		Commands::Solve { solver, paths } => {
-			// Collapse the multiple paths given into one set
-			let path_list: HashSet<&PathBuf> = HashSet::from_iter(paths.iter().map(|vec| vec.iter()).flatten());
-			// TODO: Maintain input order and use a different method to prevent multiple duplicate inputs
+			// Prevent solving multiple identical inputs
+			let mut path_list: HashSet<&PathBuf> = HashSet::new();
 
 			// TODO: Make this parallel
 			// Run the solver on each input
-			for path in path_list {
-				// let grid = Grid::from_file(path);
-				println!("{:?}", path);
-				let mut grid = get_grid(path.to_str().unwrap())
-					.expect(format!("Failed to load grid from {}", path.to_str().unwrap()).as_str());
+			for path_set in paths {
+				for (input, output) in path_set {
+					// Ensure this input is unique
+					if path_list.contains(&input) {
+						continue;
+					}
+					path_list.insert(&input);
+					println!("{}", input.display());
 
-				solver(&mut grid);
-				println!("{}", grid.penalty());
+
+					// let mut grid = Grid::from_file(input);
+					let mut grid = get_grid(input.to_str().unwrap())
+						.expect(format!("Failed to load grid from {}", input.to_str().unwrap()).as_str());
+					
+					
+					solver(&mut grid);
+					// grid.to_file(output);
+					write_sol(&grid, output.to_str().unwrap());
+				}
 			}
 		}
 	}
@@ -106,10 +117,10 @@ fn check_id_range(id: u8) -> Result<bool, String> {
 	}
 }
 
-// Converts input string to a list of paths
-fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
+// Converts input string to a list of input and output paths
+fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 	// Assuming run from root directory
-	let mut inputs: Vec<PathBuf> = Vec::new();
+	let mut paths: Vec<(PathBuf, PathBuf)> = Vec::new();
 
 	let size = input
 		.split(std::path::MAIN_SEPARATOR)
@@ -117,7 +128,8 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 		.ok_or("Error parsing input")?;
 	let id = input.split(std::path::MAIN_SEPARATOR).skip(1).next();
 
-	let path = Path::new("./inputs").join(size);
+	let in_path = Path::new("./inputs").join(size);
+	let out_path = Path::new("./outputs").join(size);
 
 	match id {
 		// Return a subset of the files in the directory
@@ -144,36 +156,55 @@ fn get_input_paths(input: &str) -> Result<Vec<PathBuf>, String> {
 						.ok_or("start id must be less than end id")?;
 
 					for i in id_start..=id_end {
-						let mut current = path.clone();
+						let mut current_in = in_path.clone();
+						let mut current_out = out_path.clone();
 
 						// https://stackoverflow.com/questions/50458144/
-						current.push(format!("{:0>3}", i));
-						current.set_extension("in");
+						current_in.push(format!("{:0>3}", i));
+						current_in.set_extension("in");
+						current_out.push(format!("{:0>3}", i));
+						current_out.set_extension("out");
 
-						inputs.push(current);
+						paths.push((current_in, current_out));
 					}
 				}
 				None => {
 					// Given a single id
-					let mut current = path.clone();
+					let mut current_in = in_path.clone();
+					let mut current_out = out_path.clone();
 
-					current.push(format!("{:0>3}", id));
-					current.set_extension("in");
+					current_in.push(format!("{:0>3}", id));
+					current_in.set_extension("in");
+					current_out.push(format!("{:0>3}", id));
+					current_out.set_extension("out");
 
-					inputs.push(current);
+					paths.push((current_in, current_out));
 				}
 			}
 			// Return the created vector
-			Ok(inputs)
+			Ok(paths)
 		}
 		None => {
 			// Return all files the directory
-			Ok(
-				fs::read_dir(path)
+			let dir = fs::read_dir(in_path)
+				.map_err(|_| "Error reading directory")?;
+	
+			for path in dir {
+				let path = path
 					.map_err(|_| "Error reading directory")?
-					.map(|entry| entry.unwrap().path())
-					.collect::<Vec<PathBuf>>(),
-			)
+					.path();
+
+				// path will be in the form of "inputs/size/id.in"
+				let mut current_out = out_path
+					.clone()
+					.join(path.file_stem().unwrap());
+
+				current_out.set_extension("out");
+
+				paths.push((path, current_out));
+			}
+
+			Ok(paths)
 		}
 	}
 }
