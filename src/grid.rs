@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
+use crate::lp::GridProblem;
 use crate::point::Point;
 
 // A Grid which we place towers and cities on.
@@ -81,7 +82,7 @@ impl fmt::Display for Grid {
 impl Grid {
 	/// Creates and returns a new Grid of the given dimension, service_radius, and
 	/// penalty radius.
-	pub fn new(dimension: u8, service_radius: u8, penalty_radius: u8) -> Grid {
+	pub fn new(dimension: u8, service_radius: u8, penalty_radius: u8) -> Self {
 		Grid {
 			dimension,
 			service_radius,
@@ -89,6 +90,10 @@ impl Grid {
 			towers: HashMap::new(),
 			cities: HashMap::new(),
 		}
+	}
+
+	pub fn new_dummy_grid() -> Grid {
+		Grid::new(0, 0, 0)
 	}
 
 	/// Returns the total penalty P of this Grid.
@@ -217,7 +222,7 @@ impl Grid {
 		res
 	}
 
-	pub fn get_cities(&self) -> &HashMap<Point, HashSet<Point>> {
+	pub fn get_cities_ref(&self) -> &HashMap<Point, HashSet<Point>> {
 		&self.cities
 	}
 
@@ -231,6 +236,19 @@ impl Grid {
 
 	pub fn dimension(&self) -> u8 {
 		self.dimension
+	}
+	pub fn get_towers_ref(&self) -> &HashMap<Point, HashSet<Point>> {
+		&self.towers
+	}
+
+	pub fn replace_all_towers(&mut self, towers: HashMap<Point, HashSet<Point>>) {
+		if self.towers == towers {
+			return;
+		}
+		self.remove_all_towers();
+		for (point, _) in towers.iter() {
+			self.add_tower(point.x, point.y);
+		}
 	}
 
 	pub fn set_service_radius(&mut self, serv_radius: u8) {
@@ -252,26 +270,24 @@ impl Grid {
 		}
 	}
 
-	/// Randomly solves the Grid using LP for the given number of iterations and
-	/// takes the best solution.
-	pub fn random_lp_solve(&mut self, max_time: u32) -> f64 {
-		use crate::lp::GridProblem;
-
+	/// Randomly solves the Grid using LP up until the max time and
+	/// returns (penalty, towers).
+	pub fn random_lp_solve(&mut self, max_time: u32, seed: u32) -> f64 {
 		let mut city_keys = HashSet::new();
 		for (&c, _) in self.cities.iter() {
 			city_keys.insert(c);
 		}
 
-		use rand::{thread_rng, Rng};
-		let mut rng = thread_rng();
+		// use rand::{thread_rng, Rng};
+		// let mut rng = thread_rng();
 		self.remove_all_towers();
 		let problem = GridProblem::new_randomized(
 			self.dimension,
 			self.service_radius,
 			self.penalty_radius,
-			city_keys.clone(),
+			city_keys,
 			max_time,
-			rng.gen_range(0..10000000),
+			seed,
 		);
 		let tower_soln = problem.tower_solution();
 		for t in tower_soln {
@@ -287,7 +303,6 @@ impl Grid {
 			self.towers.len() == 0,
 			"Cannot solve a grid with towers already placed."
 		);
-		use crate::lp::GridProblem;
 
 		let mut city_keys = HashSet::new();
 		for (&c, _) in self.cities.iter() {

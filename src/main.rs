@@ -1,21 +1,27 @@
 // Used to ignore unused code warnings.
 #![allow(dead_code)]
 
+// extern crates
+#[macro_use]
+extern crate lazy_static;
+extern crate num_cpus;
+
+mod api;
 mod grid;
 mod lp;
 mod point;
 mod solvers;
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::fs::{self, File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::Output;
-
+use api::{get_penalty_from_file, get_api_result, InputType};
 use clap::{Parser, Subcommand};
 use grid::Grid;
 use phf::phf_map;
 use solvers::*;
+use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
 // Define solver functions
@@ -60,6 +66,8 @@ enum Commands {
 }
 
 fn main() {
+
+	
 	let args = Args::parse();
 
 	match &args.command {
@@ -252,63 +260,63 @@ fn solve_one_input() {
 }
 
 fn solve_all_randomized() {
-	let paths = fs::read_dir("./inputs/medium").unwrap();
+	let paths = fs::read_dir("./inputs/small").unwrap();
 
-	// Will find a better way for this
-	let mut i = 1;
 	for path in paths {
-		// There's probably a much better way to do this
-		match i {
-			1..=10 => {
-				// Uncomment for 11-20
-				// i += 1;
-				// continue
-			}
-			11..=20 => {
-				// Comment out for 11-20
-				continue;
-			}
-			_ => return,
-		}
-
 		let real_path = path.unwrap().path();
 		let test_number = real_path.file_stem().unwrap().to_str().unwrap(); // ie: 001
 		let input_path = real_path.to_str().unwrap();
-		let output_path = "./outputs/".to_string() + "medium/" + test_number + ".out";
-		solve_one_randomized(input_path, &output_path, 10);
-
-		i += 1;
+		let output_path = "./outputs/".to_string() + "small/" + test_number + ".out";
+		// solve_one_randomized(&get_grid(input_path).unwrap(), &output_path, 60);
+		solve_one_random_threaded(&input_path, &output_path, 60);
 	}
 }
 
-fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64) {
+fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64) {
 	// const INPUT_PATH: &str = "./inputs/medium/001.in";
 	// const OUTPUT_PATH: &str = "./outputs/medium/001.out";
 	const CUTOFF_TIME: u32 = 60; // max time in seconds
 	const ITERATIONS: u32 = 10000;
 
+	let mut grid = (*grid_orig).clone();
+	use rand::{thread_rng, Rng};
+	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
-	let mut best_grid_so_far = Grid::new(0, 0, 0);
+	// let mut grid = get_grid(input_path).unwrap();
+	let mut best_towers_so_far = HashMap::new();
 	let sw = Stopwatch::start_new();
 	// For every file:
+
+	// let mut i = 0;
 	while sw.elapsed().as_secs() < secs_per_input {
-		// 5 mins
-		let mut grid = get_grid(input_path).unwrap(); // Need a way to move this out
-		let p = grid.random_lp_solve(CUTOFF_TIME);
+		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
 		// println!("{} penalty: {}", i, p);
 		if p < best_penalty_so_far {
-			best_penalty_so_far = best_penalty_so_far.min(p);
-			best_grid_so_far = grid;
+			best_penalty_so_far = p;
+			best_towers_so_far = grid.get_towers_ref().clone();
+			write_sol(&grid, output_path);
 		}
 
 		let time = sw.elapsed().as_secs();
 		if sw.elapsed().as_secs() % 10 == 0 {
 			println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
 		}
+		// i += 1;
 	}
 	println!("Best: {}", best_penalty_so_far);
-	println!("Valid: {}", best_grid_so_far.is_valid());
-	write_sol(&best_grid_so_far, output_path);
+	println!("Valid: {}", grid.is_valid());
+	grid.replace_all_towers(best_towers_so_far);
+}
+
+fn solve_one_random_threaded(input_path: &str, output_path: &str, secs_per_input: u64) {
+	let mut grids = vec![];
+	for _ in 0..(num_cpus::get()) {
+		let grid = get_grid(input_path).unwrap();
+		grids.push(grid);
+	}
+	grids
+		.par_iter()
+		.for_each(|g| solve_one_randomized(g, output_path, secs_per_input));
 }
 
 
@@ -349,15 +357,11 @@ fn get_grid(path: &str) -> io::Result<Grid> {
 	Ok(g)
 }
 
+
 fn write_sol(grid: &Grid, path: &str) {
 	// Only overwrite if solution is better than what we currently have
 	if Path::new(path).is_file() {
-		let file = File::open(path).unwrap();
-		let reader = BufReader::new(file);
-		let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
-		let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
-		let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
-		let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
+		let existing_penalty = get_penalty_from_file(path);
 
 		if grid.penalty() >= existing_penalty {
 			return;

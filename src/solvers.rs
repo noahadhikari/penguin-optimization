@@ -6,11 +6,11 @@ use std::collections::HashMap;
 /// Greedy algorithm for benchmarking.
 /// Places towers at all city locations that haven't been covered
 pub fn benchmark_greedy(grid: &mut Grid) {
-	let cities = grid.get_cities().clone();
+	let cities = grid.get_cities_ref().clone();
 	let city_points = cities.keys();
 
 	for city in city_points {
-		let covered = grid.get_cities().get(city).unwrap();
+		let covered = grid.get_cities_ref().get(city).unwrap();
 		if covered.len() > 0 {
 			continue;
 		}
@@ -29,7 +29,7 @@ pub fn greedy(grid: &mut Grid) {
 
 
   let mut cities = grid
-    .get_cities()
+    .get_cities_ref()
     .clone()
     .into_keys()
     .collect::<Vec<Point>>();
@@ -40,7 +40,7 @@ pub fn greedy(grid: &mut Grid) {
 
     for city in &cities {
       for possible_tower in Point::points_within_radius(*city, grid.service_radius(), grid.dimension()) {
-        let counter = d.entry(possible_tower).or_insert(0);
+        let counter = d.entry(*possible_tower).or_insert(0);
         *counter += 1
       }
     }
@@ -103,7 +103,7 @@ pub fn greedy(grid: &mut Grid) {
 
     let mut new_cities: Vec<Point> = Vec::new();
     for city in cities.iter() {
-      if grid.get_cities().get(city).unwrap().len() == 0 {
+      if grid.get_cities_ref().get(city).unwrap().len() == 0 {
         new_cities.push(city.clone());
       }
     }

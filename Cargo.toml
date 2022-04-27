@@ -15,7 +15,11 @@ stopwatch = "0.0.7"
 rand = "0.8.5"
 clap = { version = "3.1.12", features = ["derive"] }
 phf = { version = "0.10", features = ["macros"] }
-# lp-solvers = "0.0.4"
-# minilp = "0.2.2"
-# highs = "1.2.1"
-# linregress = "0.4.4"
+reqwest = { version = "0.11.10", features = ["json"] }
+tokio = { version = "1.12.0", features = ["full"] }
+lazy_static = "1.4.0"
+regex = "1.5.5"
+num_cpus = "1.13.1"
+rayon = "1.5.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
