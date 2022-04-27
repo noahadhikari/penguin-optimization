@@ -1,11 +1,30 @@
 use crate::{grid::Grid, point::Point};
 use std::collections::HashMap;
+use rand::{thread_rng, Rng};
+use stopwatch::Stopwatch;
+use rayon::prelude::*;
 
+
+// Greedy parameters
+// What percent of the total do we consider in addition to max coverage
+const PERCENT_REMAINING: f32 = 0.25;
+
+// LP parameters
+// Max time in seconds
+const LP_CUTOFF_TIME: u32 = 500000;
+
+// RLP parameters
+const SECS_PER_INPUT: u64 = 60;
+const CUTOFF_TIME: u32 = 60; // max time in seconds
+const ITERATIONS: u32 = 10000;
+
+
+// ------- Solver functions -------
 
 // -- Naive Greedy --
 /// Greedy algorithm for benchmarking.
 /// Places towers at all city locations that haven't been covered
-pub fn benchmark_greedy(grid: &mut Grid) {
+pub fn benchmark_greedy(grid: &mut Grid, output_path: &str) {
 	let cities = grid.get_cities_ref().clone();
 	let city_points = cities.keys();
 
@@ -15,6 +34,7 @@ pub fn benchmark_greedy(grid: &mut Grid) {
 			continue;
 		}
 		grid.add_tower(city.get_x(), city.get_y());
+    grid.write_solution(output_path);
 	}
 }
 
@@ -22,12 +42,8 @@ pub fn benchmark_greedy(grid: &mut Grid) {
 /// Greedy algorithm for solving the grid.
 /// Places a tower such that it covers the most cities.
 /// Picks a range of covered and minimizes the added penalty.
-pub fn greedy(grid: &mut Grid) {
-
-  // What percent of the total do we consider in addition to max coverage
-  const PERCENT_REMAINING: f32 = 0.25;
-
-
+pub fn greedy(grid: &mut Grid, output_path: &str) {
+  
   let mut cities = grid
     .get_cities_ref()
     .clone()
@@ -111,4 +127,55 @@ pub fn greedy(grid: &mut Grid) {
 
   }
 
+  grid.write_solution(output_path);
 }
+
+
+
+// -- Linear Programming --
+// TODO: move out of grid class
+pub fn linear_programming(grid: &mut Grid) {
+  grid.lp_solve(LP_CUTOFF_TIME);
+}
+
+
+
+// -- Randomize Valid Solution threaded
+pub fn randomize_valid_solution_with_lp_threaded(grid: &mut Grid, output_path: &str) {
+	let mut grids: Vec<_> = vec![];
+	for _ in 0..(num_cpus::get()) {
+		grids.push(grid.clone());
+	}
+	grids
+		.par_iter_mut()
+		.for_each(|g: &mut Grid| randomize_valid_solution_with_lp(g, output_path));
+}
+
+
+// -- Randomize Valid Solution with LP --
+pub fn randomize_valid_solution_with_lp(grid: &mut Grid, output_path: &str) {
+	let mut rng = thread_rng();
+	let mut best_penalty_so_far = f64::INFINITY;
+	let sw = Stopwatch::start_new();
+
+  // Grab a valid solution and see if it is better
+  // TODO: prevent getting same one over and over
+	while sw.elapsed().as_secs() < SECS_PER_INPUT {
+		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
+		// println!("{} penalty: {}", i, p);
+		if p < best_penalty_so_far {
+			best_penalty_so_far = p;
+			grid.write_solution(output_path);
+		}
+
+		let time = sw.elapsed().as_secs();
+		if sw.elapsed().as_secs() % 10 == 0 {
+			println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
+		}
+    // Reset grid
+    grid.remove_all_towers();
+	}
+	println!("Best: {}", best_penalty_so_far);
+	println!("Valid: {}", grid.is_valid());
+}
+

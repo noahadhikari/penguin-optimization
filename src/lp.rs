@@ -45,7 +45,7 @@ pub struct GridProblem {
 
 impl GridProblem {
 	/// Adds a new tower variable t_ij at the given point (i, j) to the LP.
-	fn add_tower_variable(&mut self, tower: Point) -> Variable {
+	fn add_tower_variable(&mut self, _tower: Point) -> Variable {
 		// let name = format!("t_{}_{}", tower.x, tower.y);
 		let is_tower = self.vars.add(variable().binary()); //.name(name));
 		is_tower

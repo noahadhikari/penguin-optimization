@@ -105,7 +105,7 @@ fn get_three_digit_num(n: u8) -> String {
 	}
 }
 
-/// Gets our penalty from a specifie file
+/// Gets our penalty from a specific file
 pub fn get_penalty_from_file(path: &str) -> f64 {
 	let file = File::open(path).unwrap();
 	let reader = BufReader::new(file);
