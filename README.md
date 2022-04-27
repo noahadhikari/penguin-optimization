@@ -4,6 +4,10 @@
 - [Rust Instructions](#rust-instructions)
   - [Requirements](#requirements)
   - [Usage](#usage)
+    - [`list` or `ls`](#list-or-ls)
+    - [`api` or `q`](#api-or-q)
+    - [`solve`](#solve)
+      - [EXAMPLES:](#examples)
   - [Directory Structure](#directory-structure)
   - [Development](#development)
   - [Documentation](#documentation)
@@ -48,11 +52,54 @@ sudo apt-get install pkg-config libssl-dev
 
 ## Usage
 
-In the root of the directory, run
+This command builds and runs the project
 ```bash
-cargo run --release
+cargo run --release -- <SUBCOMMAND>
 ```
-TODO: create and define cli arguments
+OR equivalently,first build the project with
+```bash
+cargo build --release
+```
+Then, in the root of the directory (or ensuring the inputs folder is in the same directory), run
+```bash
+./target/release/penguin-project <SUBCOMMAND>
+```
+Or equivalently (this builds it for you)
+
+
+### `list` or `ls`
+This lists all available solvers
+
+### `api` or `q`
+USAGE:
+```bash
+... api <size>
+```
+Where size can be
+- small (s)
+- medium (m)
+- large (l)
+
+This `q`ueries the 170 leader board API to find which outputs have better/worse scores than the current ones.
+
+*The API is limited to 5 QPS, so the output pauses sometimes*
+
+### `solve`
+USAGE:
+```bash
+... solve -s <SOLVER> <PATHS>..
+```
+
+Where you can input any number of `PATH` arguments, each one in the form `<size>/<ids>`
+
+- `<size>` can be `small`, `medium`, or `large`
+- `<ids>` can be a single id or a range of ids
+
+#### EXAMPLES:
+
+`solve -s lp large` runs the `lp` solver on everything in the large folder
+
+`solve -s greedy small/1..220 medium/1` runs the `greedy` solver on ids 001 through 220 in the small folder and id 001 in the medium
 
 
 ## Directory Structure
@@ -80,6 +127,8 @@ In addition to the above, we used the following crates/libraries:
 | | | | 
 |-|-|-|
 |`good_lp`| [Github](https://github.com/rust-or/good_lp) | [Documentation](https://docs.rs/good_lp/1.3.2/good_lp/) |
+|`clap`| [Derive Doc](https://github.com/clap-rs/clap/blob/v3.1.12/examples/derive_ref/README.md) | [Derive Tutorial](https://github.com/clap-rs/clap/blob/v3.1.12/examples/tutorial_derive/README.md#validated-values) |
+|`pfh` | [Documentation](https://docs.rs/phf/0.10.1/phf/) ||
 |`rustfmt-check`| [Github](https://github.com/mbrobbel/rustfmt-check) | [Actions Marketplace](https://github.com/marketplace/actions/rust-rustfmt-check) |
 |`rustfmt` | [Github](https://github.com/rust-lang/rustfmt) | [Toml Docs](https://rust-lang.github.io/rustfmt) |
 

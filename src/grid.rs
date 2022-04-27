@@ -1,6 +1,10 @@
 use std::collections::{HashMap, HashSet};
-use std::fmt;
+use std::{fmt, io};
+use std::fs::{OpenOptions, File};
+use std::io::{Write, BufReader, BufRead};
+use std::path::Path;
 
+use crate::api;
 use crate::lp::GridProblem;
 use crate::point::Point;
 
@@ -58,12 +62,12 @@ impl fmt::Debug for Grid {
 /// Pretty printer for Grid.
 impl fmt::Display for Grid {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "Penalty: {}\n", self.penalty());
+		write!(f, "Penalty: {}\n", self.penalty())?;
 		for y in (0..self.dimension).rev() {
 			for x in 0..self.dimension {
 				let p = Point::new(x as i32, y as i32);
 				if self.towers.contains_key(&p) && self.cities.contains_key(&p) {
-					write!(f, "¢"); // city and tower at same point
+					// write!(f, "¢"); // city and tower at same point
 				} else if self.towers.contains_key(&p) {
 					write!(f, "t")?; // tower at this point
 				} else if self.cities.contains_key(&p) {
@@ -90,6 +94,14 @@ impl Grid {
 			towers: HashMap::new(),
 			cities: HashMap::new(),
 		}
+	}
+
+	/// Deeply clone the grid
+	pub fn clone(&self) -> Self {
+		let mut new_grid = Grid::new(self.dimension, self.service_radius, self.penalty_radius);
+		new_grid.towers = self.towers.clone();
+		new_grid.cities = self.cities.clone();
+		new_grid
 	}
 
 	pub fn new_dummy_grid() -> Grid {
@@ -226,6 +238,17 @@ impl Grid {
 		&self.cities
 	}
 
+	pub fn service_radius(&self) -> u8 {
+		self.service_radius
+	}
+
+	pub fn penalty_radius(&self) -> u8 {
+		self.penalty_radius
+	}
+
+	pub fn dimension(&self) -> u8 {
+		self.dimension
+	}
 	pub fn get_towers_ref(&self) -> &HashMap<Point, HashSet<Point>> {
 		&self.towers
 	}
@@ -257,6 +280,64 @@ impl Grid {
 		for (_, covered) in self.cities.iter_mut() {
 			covered.clear();
 		}
+	}
+
+
+		/// Returns the grid created from the passed in input file.
+	pub fn from_file(path: &str) -> io::Result<Grid> {
+		let mut g = Grid::new(0, 0, 0);
+
+		let file = File::open(path)?;
+		let reader = BufReader::new(file);
+
+		let mut i: i32 = 0;
+		let mut num_cities: i32 = -1;
+		for line in reader.lines() {
+			if let Ok(l) = line {
+				let vec: Vec<&str> = l.split_whitespace().collect();
+				let first_val: &str = vec.get(0).unwrap();
+				if first_val.eq("#") {
+					continue;
+				}
+				match i {
+					0 => num_cities = first_val.parse::<i32>().unwrap(),
+					1 => g.set_dimension(first_val.parse::<u8>().unwrap()),
+					2 => g.set_service_radius(first_val.parse::<u8>().unwrap()),
+					3 => g.set_penalty_radius(first_val.parse::<u8>().unwrap()),
+					_ => {
+						if (4..(4 + num_cities)).contains(&i) {
+							let x = first_val.parse::<i32>().unwrap();
+							let y = vec.get(1).unwrap().parse::<i32>().unwrap();
+							g.add_city(x, y);
+						}
+					}
+				}
+				i += 1;
+			}
+		}
+		Ok(g)
+	}
+
+	// Write self to a file as a solution
+	pub fn write_solution(&self, output_path: &str) {
+		// Only overwrite if solution is better than what we currently have
+		if Path::new(output_path).is_file() {
+			let existing_penalty = api::get_penalty_from_file(output_path);
+
+			if self.penalty() >= existing_penalty {
+				return;
+			}
+		}
+
+		let data = self.output();
+		let mut f = OpenOptions::new()
+			.write(true)
+			.truncate(true)
+			.create(true)
+			.open(output_path)
+			.expect("Unable to open file");
+		f.write_all(data.as_bytes())
+			.expect("Unable to write data");
 	}
 
 	/// Randomly solves the Grid using LP up until the max time and

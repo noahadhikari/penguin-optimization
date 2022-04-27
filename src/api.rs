@@ -28,7 +28,7 @@ pub enum InputType {
 
 /// Prints out the inputs we have better/worse scores than
 #[tokio::main]
-pub async fn get_api_result(size: InputType) {
+pub async fn get_api_result(size: &InputType) {
 	let input_type: &str;
 	// { test_number: (our_score, leaderboard_score), ... }
 	let mut worse_scores: HashMap<u8, (f64, f64)> = HashMap::new();
@@ -148,4 +148,14 @@ fn get_min_score(scores: Vec<Scores>) -> f64 {
 		cur_min = cur_min.min(score.TeamScore);
 	}
 	cur_min
+}
+
+/// Parse input for CLI
+pub fn input_size_from_string(input: &str) -> Result<InputType, String> {
+	match input {
+		"small" | "s" => Ok(InputType::Small),
+		"medium" | "m" => Ok(InputType::Medium),
+		"large" | "l"  => Ok(InputType::Large),
+		_ => Err("Input size needs to be \nsmall (s)\nmedium (m)\nlarge(l)".to_string()),
+	}
 }
