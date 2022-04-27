@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
-use std::{fmt, io};
-use std::fs::{OpenOptions, File};
-use std::io::{Write, BufReader, BufRead};
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
+use std::{fmt, io};
 
 use crate::api;
 use crate::lp::GridProblem;
@@ -249,6 +249,7 @@ impl Grid {
 	pub fn dimension(&self) -> u8 {
 		self.dimension
 	}
+
 	pub fn get_towers_ref(&self) -> &HashMap<Point, HashSet<Point>> {
 		&self.towers
 	}
@@ -282,8 +283,7 @@ impl Grid {
 		}
 	}
 
-
-		/// Returns the grid created from the passed in input file.
+	/// Returns the grid created from the passed in input file.
 	pub fn from_file(path: &str) -> io::Result<Grid> {
 		let mut g = Grid::new(0, 0, 0);
 
@@ -336,8 +336,7 @@ impl Grid {
 			.create(true)
 			.open(output_path)
 			.expect("Unable to open file");
-		f.write_all(data.as_bytes())
-			.expect("Unable to write data");
+		f.write_all(data.as_bytes()).expect("Unable to write data");
 	}
 
 	/// Randomly solves the Grid using LP up until the max time and
