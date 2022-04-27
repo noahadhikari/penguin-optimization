@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -30,9 +30,9 @@ pub enum InputType {
 #[tokio::main]
 pub async fn get_api_result(size: InputType) {
 	let input_type: &str;
-	// { test_number: [our_score, leaderboard_score], ... }
-	let mut worse_scores: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
-	let mut better_scores: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
+	// { test_number: (our_score, leaderboard_score), ... }
+	let mut worse_scores: HashMap<u8, (f64, f64)> = HashMap::new();
+	let mut better_scores: HashMap<u8, (f64, f64)> = HashMap::new();
 
 	// Maps to directory name
 	match size {
@@ -56,8 +56,8 @@ pub async fn get_api_result(size: InputType) {
 			Err(e) => panic!("{}", e),
 			Ok(leaderboard_penalty) => {
 				// Found highest leaderboard score
-				println!("{}: {:?}", get_three_digit_num(i), round(leaderboard_penalty));
-				let our_path = "./outputs/".to_string() + &input_type.to_string() + "/" + &get_three_digit_num(i) + ".out";
+				println!("{}: {:?}", format!("{:0>3}", i), round(leaderboard_penalty));
+				let our_path = "./outputs/".to_string() + &input_type.to_string() + "/" + &format!("{:0>3}", i) + ".out";
 				// We don't have an output file
 				if !Path::new(&our_path).is_file() {
 					println!("Local test {} not found", i.to_string());
@@ -68,9 +68,9 @@ pub async fn get_api_result(size: InputType) {
 				let rounded_leaderboard = round(leaderboard_penalty);
 
 				if our_penalty > rounded_leaderboard {
-					worse_scores.insert(i, vec![our_penalty, rounded_leaderboard]);
+					worse_scores.insert(i, (our_penalty, rounded_leaderboard));
 				} else if our_penalty < rounded_leaderboard {
-					better_scores.insert(i, vec![our_penalty, rounded_leaderboard]);
+					better_scores.insert(i, (our_penalty, rounded_leaderboard));
 				}
 			}
 		}
@@ -78,31 +78,25 @@ pub async fn get_api_result(size: InputType) {
 
 	println!("\n\n\n\n");
 	println!("{} Better:", better_scores.len());
-	for (key, value) in better_scores {
-		println!("Test {}. Ours: {}. Best: {}. Diff: {}", get_three_digit_num(key), value[0], value[1], round(value[1] - value[0]));
+	for (key, (ours, leaderboard)) in better_scores {
+		println!("Test {}. Ours: {}. Best: {}. Diff: {}", format!("{:0>3}", key), ours, leaderboard, round(leaderboard - ours));
 	}
 
 	println!("\n{} Worse:", worse_scores.len());
-	for (key, value) in worse_scores {
-		println!("Test {}. Ours: {}. Best: {}. Diff: {}", get_three_digit_num(key), value[0], value[1], round(value[0] - value[1]));
+	for (key, (ours, leaderboard)) in sort_by_diff(worse_scores) {
+		println!("Test {}. Ours: {}. Best: {}. Diff: {}", format!("{:0>3}", key), ours, leaderboard, round(ours - leaderboard));
 	}
+}
+
+fn sort_by_diff(scores: HashMap<u8, (f64, f64)>) -> Vec<(u8, (f64, f64))> {
+	let mut vec = scores.into_iter().collect::<Vec<(u8, (f64, f64))>>();
+	vec.sort_by(|a, b| (a.1.1 - a.1.0).partial_cmp(&(b.1.1 - b.1.0)).unwrap());
+	vec
 }
 
 /// Rounds number to 6 decimal places to avoid floating point errors
 fn round(n: f64) -> f64 {
 	(n * 1000000.0).round() / 1000000.0
-}
-
-/// Converts number to 3 digit equivalent (1 -> "001", 40 -> "040", 103 ->
-/// "103")
-fn get_three_digit_num(n: u8) -> String {
-	if n >= 100 {
-		return n.to_string();
-	} else if n >= 10 {
-		return "0".to_string() + &n.to_string();
-	} else {
-		return "00".to_string() + &n.to_string();
-	}
 }
 
 /// Gets our penalty from a specifie file
