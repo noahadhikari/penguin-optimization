@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -42,7 +42,7 @@ pub async fn get_api_result(size: InputType) {
 	}
 
 	// Number of tests in each size
-	let input_count: BTreeMap<&str, u8> = BTreeMap::from([("small", 241), ("medium", 239), ("large", 239)]);
+	let input_count: HashMap<&str, u8> = HashMap::from([("small", 241), ("medium", 239), ("large", 239)]);
 
 	let count = *input_count.get(input_type).unwrap();
 	for i in 1..=count {
@@ -56,7 +56,7 @@ pub async fn get_api_result(size: InputType) {
 			Err(e) => panic!("{}", e),
 			Ok(leaderboard_penalty) => {
 				// Found highest leaderboard score
-				println!("{}: {:?}", i, leaderboard_penalty);
+				println!("{}: {:?}", get_three_digit_num(i), round(leaderboard_penalty));
 				let our_path = "./outputs/".to_string() + &input_type.to_string() + "/" + &get_three_digit_num(i) + ".out";
 				// We don't have an output file
 				if !Path::new(&our_path).is_file() {
@@ -79,12 +79,12 @@ pub async fn get_api_result(size: InputType) {
 	println!("\n\n\n\n");
 	println!("{} Better:", better_scores.len());
 	for (key, value) in better_scores {
-		println!("Test {}. Ours: {}. Best: {}. Diff: {}", key, value[0], value[1], round(value[1] - value[0]));
+		println!("Test {}. Ours: {}. Best: {}. Diff: {}", get_three_digit_num(key), value[0], value[1], round(value[1] - value[0]));
 	}
 
 	println!("\n{} Worse:", worse_scores.len());
 	for (key, value) in worse_scores {
-		println!("Test {}. Ours: {}. Best: {}. Diff: {}", key, value[0], value[1], round(value[0] - value[1]));
+		println!("Test {}. Ours: {}. Best: {}. Diff: {}", get_three_digit_num(key), value[0], value[1], round(value[0] - value[1]));
 	}
 }
 
