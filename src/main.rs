@@ -127,13 +127,19 @@ fn solve_one_randomized(input_path: &str, output_path: &str, secs_per_input: u64
 	grid.replace_all_towers(best_towers_so_far);
 }
 
+pub enum InputSize {
+	Small,
+	Medium,
+	Large,
+}
+
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
 	// solve_one_randomized("inputs/small/003.in", "outputs/small/003.out", 10);
 	// setup_persistence();
 	// solve_all_randomized();
-	get_small_result();
+	get_api_result(InputSize::Small);
 }
 
 // Algorithms
@@ -218,6 +224,7 @@ fn write_sol(grid: &Grid, path: &str) {
 	f.write_all(data.as_bytes()).expect("Unable to write data");
 }
 
+// API
 
 #[derive(Serialize, Deserialize, Debug)]
 struct APIResponse {
@@ -231,73 +238,83 @@ struct Scores {
 }
 
 #[tokio::main]
-pub async fn get_small_result() {
-	let small_count: u8 = 241;
-	for i in 1..=small_count {
-		if i == 240 { // 240 is invalid
-			continue;
-		}
-		// let our_path  = "./outputs/small/".to_string() + &i.to_string() + ".in";
-		let highest_score = get_highest_leaderboard_score(i).await;
-		match highest_score {
-			Ok(score) => {
-				println!("{} : {:?}", i, score);
-			},
-			Err(e) => panic!("{}", e),
-		}
+pub async fn get_api_result(size: InputSize) {
+	let mut input_size = "";
+	// { test_number: (our_score, leaderboard_score), ... }
+	let mut worse_scores: HashMap<u8, Vec<f64>> = HashMap::new();
+	let mut better_scores: HashMap<u8, Vec<f64>> = HashMap::new();
+
+	// Maps to directory name
+	match size {
+		InputSize::Small => input_size = "small",
+		InputSize::Medium => input_size = "medium",
+		InputSize::Large => input_size = "large",
+		_ => panic!("Not a valid input size"),
 	}
 
-		// if Path::new(&our_path).is_file() {
-			// return Err("File not found".to_string());
-		// }
-		// let our_penalty = get_penalty_from_file(our_path.as_str());
+	// Tests in each size
+	let input_count: HashMap<&str, u8> = HashMap::from([
+		("small", 241),
+		("medium", 239),
+		("large", 239),
+	]);
 
-		// let get_url = "https://project.cs170.dev/scoreboard/small/".to_string() + &i.to_string();
-		// let res = reqwest::get(get_url)
-		// 	.await
-		// 	.unwrap();
-			
-		// match res.status() {
-		// 	reqwest::StatusCode::OK => {
-		// 		match res.json::<APIResponse>().await {
-		// 			Ok(parsed) => {
-		// 				// println!("Success! {:?}", parsed);
-		// 				let x = parsed.Entries.get(0).unwrap().TeamScore;
-		// 				println!("{:?}", x);
-		// 			}
-		// 			Err(_) => println!("Hm, the response didn't match the shape we expected."),
-		// 		};
-		// 	}
-		// 	other => {
-    //     panic!("Uh oh! Something unexpected happened: {:?}", other);
-		// 	}
-		// }
-		
-		
-		// println!("{:?}", result)
-		// println!("{}", get_url);
-		// let client = reqwest::Client::new();
-		// let response = client
-		// 		.get(get_url)
-		// 		.send()
-		// 		.await
-		// 		.unwrap();
-		// println!("Success! {:?}", response);
+	let count = *input_count.get(input_size).unwrap();
+	for i in 1..=count {
+		if i == 240 && input_size == "small"  { // small/240 is invalid
+			continue;
+		}
+		let highest_score = get_highest_leaderboard_score(i).await;
+		match highest_score {
+			Err(e) => panic!("{}", e),
+			Ok(leaderboard_penalty) => {
+				// Found highest leaderboard score
+				println!("{} : {:?}", i, leaderboard_penalty);
+				let our_path  = "./outputs/small/".to_string() + &get_three_digit_num(i) + ".out";
+				// We don't have an output file
+				if !Path::new(&our_path).is_file() {
+					println!("Local test {} not found", i.to_string());
+					continue;
+				}
 
-		// GET their response from get_url
-		// let body = reqwest::get("https://www.rust-lang.org")
-    // .await?
-    // .text()
-    // .await?;
+				let our_penalty= round(get_penalty_from_file(our_path.as_str()));
+				let rounded_leaderboard = round(leaderboard_penalty);
 
-		
-		// Maybe use serde_json to parse: https://stackoverflow.com/questions/30292752/how-do-i-parse-a-json-file	
-		// sort by TeamScore and compare our_penalty with it. If it's less than, add info to a vector. 
-	// }	
-	// Ok(()) // Return the vector
+				if our_penalty > rounded_leaderboard {
+					worse_scores.insert(i, vec![our_penalty, rounded_leaderboard]);
+				} else if our_penalty < rounded_leaderboard {
+					better_scores.insert(i, vec![our_penalty, rounded_leaderboard]);
+				}
+			},
+		}
+	}	
+	
+	println!("Better:");
+	for (key, value) in better_scores {
+    println!("Test {}. Ours: {}. Best: {}", key, value[0], value[1]);
+	}
+
+	println!("Worse:");
+	for (key, value) in worse_scores {
+    println!("Test {}. Ours: {}. Best: {}", key, value[0], value[1]);
+	}
 }
 
-/// Only for small for now
+/// Rounds number to 6 decimal places to avoid floating point errors
+fn round(n: f64) -> f64 {
+	(n * 1000000.0).round() / 1000000.0
+}
+
+fn get_three_digit_num(n: u8) -> String {
+	if n >= 100 {
+		return n.to_string();
+	} else if n >= 10 {
+		return "0".to_string() + &n.to_string();
+	} else {
+		return "00".to_string() + &n.to_string();
+	}
+}
+
 // #[tokio::main]
 pub async fn get_highest_leaderboard_score(test_num: u8) -> Result<f64, String>{
 	let get_url: String = "https://project.cs170.dev/scoreboard/small/".to_string() + &test_num.to_string();
