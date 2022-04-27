@@ -26,6 +26,7 @@ pub enum InputType {
 	Large,
 }
 
+/// Prints out the inputs we have better/worse scores than
 #[tokio::main]
 pub async fn get_api_result(size: InputType) {
 	let input_type: &str;
