@@ -320,10 +320,10 @@ impl Grid {
 
 	// Write self to a file as a solution
 	pub fn write_solution(&self, output_path: &str) {
+		assert!(self.is_valid(), "Not a valid solution");
 		// Only overwrite if solution is better than what we currently have
 		if Path::new(output_path).is_file() {
 			let existing_penalty = api::get_penalty_from_file(output_path);
-
 			if self.penalty() >= existing_penalty {
 				return;
 			}

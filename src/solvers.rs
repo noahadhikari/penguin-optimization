@@ -34,8 +34,8 @@ pub fn benchmark_greedy(grid: &mut Grid, output_path: &str) {
 			continue;
 		}
 		grid.add_tower(city.get_x(), city.get_y());
-    grid.write_solution(output_path);
 	}
+	grid.write_solution(output_path);
 }
 
 // -- Greedy --
@@ -176,6 +176,5 @@ pub fn randomize_valid_solution_with_lp(grid: &mut Grid, output_path: &str) {
     grid.remove_all_towers();
 	}
 	println!("Best: {}", best_penalty_so_far);
-	println!("Valid: {}", grid.is_valid());
 }
 
