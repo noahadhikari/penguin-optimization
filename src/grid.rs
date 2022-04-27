@@ -213,15 +213,37 @@ impl Grid {
 		}
 	}
 
+	/// Moves a tower from P = (x, y) to Q = (x', y'). 
+	/// Fails if tower at P does not exist or if tower at Q already exists.
+	pub fn move_tower(&mut self, p: Point, q: Point) {
+		assert!(
+			self.towers.contains_key(&p),
+			"Cannot move tower at {:?} because it does not exist.",
+			p
+		);
+		assert!(
+			!self.towers.contains_key(&q),
+			"Cannot move tower to {:?} because there is already a tower there.",
+			q
+		);
+		self.remove_tower(p.x, p.y);
+		self.add_tower(q.x, q.y);
+	}
+
 	/// Asserts that the given coordinates are within this Grid.
 	fn check_coordinates(&self, x: i32, y: i32) {
 		assert!(
-			x >= 0 && y >= 0 && x < self.dimension as i32 && y < self.dimension as i32,
+			self.is_on_grid(x, y),
 			"Coordinates off the edge of grid: ({}, {}) for grid dimension {}",
 			x,
 			y,
 			self.dimension
 		);
+	}
+
+	/// Returns whether (x, y) is within the grid.
+	pub fn is_on_grid(&self, x: i32, y: i32) -> bool {
+		x >= 0 && y >= 0 && x < self.dimension as i32 && y < self.dimension as i32
 	}
 
 	/// Returns the file output string of this entire Grid.
@@ -390,4 +412,28 @@ impl Grid {
 			self.add_tower(t.x, t.y);
 		}
 	}
+
+	pub fn towers_from_file(path: &str) -> HashSet<Point> {
+		let mut towers = HashSet::new();
+		let file = File::open(path).expect("Unable to open file");
+		let reader = BufReader::new(file);
+
+		let mut i: i32 = 0;
+		for line in reader.lines() {
+			match i {
+				0 => {i += 1; continue;}
+				1 => {i += 1; continue;}
+				_ => {
+					if let Ok(l) = line {
+						let vec: Vec<&str> = l.split_whitespace().collect();
+						let x = vec.get(0).unwrap().parse::<i32>().unwrap();
+						let y = vec.get(1).unwrap().parse::<i32>().unwrap();
+						towers.insert(Point::new(x, y));
+					}
+				}
+			}
+		}
+		towers
+	}
+
 }

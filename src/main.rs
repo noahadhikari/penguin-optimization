@@ -28,6 +28,7 @@ static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"benchmark" => benchmark_greedy,
 	"greedy" => greedy,
 	"rlp" => randomize_valid_solution_with_lp_threaded,
+	"hillclimb" => hillclimb,
 };
 
 

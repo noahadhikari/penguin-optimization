@@ -168,3 +168,58 @@ pub fn randomize_valid_solution_with_lp(grid: &mut Grid, output_path: &str) {
 	}
 	println!("Best: {}", best_penalty_so_far);
 }
+
+/// First grabs the current solution we have.
+/// Then, sees if any improvements can be made by moving a tower slightly, and makes them.
+pub fn hillclimb(grid: &mut Grid, output_path: &str) {
+	let initial_towers = Grid::towers_from_file(output_path);
+	grid.remove_all_towers();
+	for tower in initial_towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	
+	fn adjacent_towers(grid: &Grid, t: Point) -> Vec<Point> {
+		let mut adjacent_towers: Vec<Point> = Vec::new();
+		let r = grid.dimension() as i32;
+		for x in (t.x - r)..=t.x + r {
+			for y in (t.y - r)..=(t.y + r) {
+				if x == t.get_x() && y == t.get_y() {
+					continue;
+				}
+				if grid.is_on_grid(x, y) {
+					let p = Point::new(x, y);
+					if !grid.get_towers_ref().contains_key(&p) {
+						adjacent_towers.push(p);
+					}
+				}
+			}
+		}
+		adjacent_towers
+	}
+
+	let old_penalty = grid.penalty();
+
+	let mut new_grid = grid.clone();
+
+	let mut changed = false;
+	'outer: for (&tower, _) in grid.get_towers_ref() {
+		for adj_tower in adjacent_towers(&new_grid, tower) {
+			println!("Move {} to {}", tower, adj_tower);
+			new_grid.move_tower(tower, adj_tower);
+			let new_penalty = new_grid.penalty();
+			println!("Penalty: {}, Valid: {}", new_penalty, new_grid.is_valid());
+			if new_grid.is_valid() && new_penalty < old_penalty {
+				changed = true;
+				new_grid.write_solution(output_path);
+				break 'outer;
+			} else {
+				new_grid.move_tower(adj_tower, tower); //undo move
+			}
+		}
+	}
+
+	if changed {
+		hillclimb(&mut new_grid, output_path);
+	}
+
+}
