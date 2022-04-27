@@ -83,6 +83,7 @@ fn main() {
 		// -- API --
 		Commands::Api { size } => {
 			get_api_result(size);
+		}
 		// -- SOLVE --
 		Commands::Solve { solver, paths } => {
 			// Prevent solving multiple identical inputs
