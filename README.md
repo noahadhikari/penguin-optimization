@@ -44,9 +44,11 @@ sudo apt-get install gcc
 
 ## Usage
 
-// TODO: change name and add to the path
-
-First build the project with
+This command builds and runs the project
+```bash
+cargo run --release -- <SUBCOMMAND>
+```
+OR equivalently,first build the project with
 ```bash
 cargo build --release
 ```
@@ -55,9 +57,7 @@ Then, in the root of the directory (or ensuring the inputs folder is in the same
 ./target/release/penguin-project <SUBCOMMAND>
 ```
 Or equivalently (this builds it for you)
-```bash
-cargo run --release -- <SUBCOMMAND>
-```
+
 
 ### `list` or `ls`
 This lists all available solvers
