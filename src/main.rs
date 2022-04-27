@@ -9,6 +9,7 @@ extern crate num_cpus;
 mod grid;
 mod lp;
 mod point;
+mod api;
 
 // crate imports
 // use point::preprocess::setup_persistence;
@@ -20,6 +21,7 @@ use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
 use std::{fs, u32};
+use api::{get_api_result, InputType, get_penalty_from_file};
 
 use grid::Grid;
 use rand::{thread_rng, Rng};
@@ -97,6 +99,7 @@ fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64
 	const ITERATIONS: u32 = 10000;
 
 	let mut grid = (*grid_orig).clone();
+	use rand::{thread_rng, Rng};
 	let mut rng = thread_rng();
 	let mut best_penalty_so_far = f64::INFINITY;
 	// let mut grid = get_grid(input_path).unwrap();
@@ -142,7 +145,8 @@ fn main() {
 	// setup_persistence();
 	// solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out",
 	// 60);
-	solve_all_randomized();
+	// solve_all_randomized();
+	get_api_result(InputType::Small);
 }
 
 // Algorithms
@@ -197,16 +201,12 @@ fn get_grid(path: &str) -> io::Result<Grid> {
 	Ok(g)
 }
 
+
 fn write_sol(grid: &Grid, path: &str) {
 	// Only overwrite if solution is better than what we currently have
 	if Path::new(path).is_file() {
-		let file = File::open(path).unwrap();
-		let reader = BufReader::new(file);
-		let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
-		let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
-		let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
-		let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
-
+		let existing_penalty = get_penalty_from_file(path);
+		
 		if grid.penalty() >= existing_penalty {
 			return;
 		}

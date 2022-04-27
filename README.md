@@ -39,6 +39,13 @@ You will need a C compiler:
 sudo apt-get install gcc
 ```
 
+If you want to access the api:
+
+```bash
+sudo apt-get install pkg-config libssl-dev
+```
+
+
 ## Usage
 
 In the root of the directory, run
