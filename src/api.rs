@@ -155,7 +155,7 @@ pub fn input_size_from_string(input: &str) -> Result<InputType, String> {
 	match input {
 		"small" | "s" => Ok(InputType::Small),
 		"medium" | "m" => Ok(InputType::Medium),
-		"large" | "l"  => Ok(InputType::Large),
+		"large" | "l" => Ok(InputType::Large),
 		_ => Err("Input size needs to be \nsmall (s)\nmedium (m)\nlarge(l)".to_string()),
 	}
 }

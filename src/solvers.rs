@@ -1,8 +1,11 @@
-use crate::{grid::Grid, point::Point};
 use std::collections::HashMap;
+
 use rand::{thread_rng, Rng};
-use stopwatch::Stopwatch;
 use rayon::prelude::*;
+use stopwatch::Stopwatch;
+
+use crate::grid::Grid;
+use crate::point::Point;
 
 
 // Greedy parameters
@@ -34,7 +37,7 @@ pub fn benchmark_greedy(grid: &mut Grid, output_path: &str) {
 			continue;
 		}
 		grid.add_tower(city.get_x(), city.get_y());
-    grid.write_solution(output_path);
+		grid.write_solution(output_path);
 	}
 }
 
@@ -43,101 +46,89 @@ pub fn benchmark_greedy(grid: &mut Grid, output_path: &str) {
 /// Places a tower such that it covers the most cities.
 /// Picks a range of covered and minimizes the added penalty.
 pub fn greedy(grid: &mut Grid, output_path: &str) {
-  
-  let mut cities = grid
-    .get_cities_ref()
-    .clone()
-    .into_keys()
-    .collect::<Vec<Point>>();
+	let mut cities = grid.get_cities_ref().clone().into_keys().collect::<Vec<Point>>();
 
-  // Continue until cities are covered
-  while cities.len() != 0 {
-    let mut d: HashMap<Point, u32> = HashMap::new();
+	// Continue until cities are covered
+	while cities.len() != 0 {
+		let mut d: HashMap<Point, u32> = HashMap::new();
 
-    for city in &cities {
-      for possible_tower in Point::points_within_radius(*city, grid.service_radius(), grid.dimension()) {
-        let counter = d.entry(*possible_tower).or_insert(0);
-        *counter += 1
-      }
-    }
+		for city in &cities {
+			for possible_tower in Point::points_within_radius(*city, grid.service_radius(), grid.dimension()) {
+				let counter = d.entry(*possible_tower).or_insert(0);
+				*counter += 1
+			}
+		}
 
-    // Towers to be considered, mapped to added cost
-    let mut towers_to_be_considered: HashMap<Point, f64> = HashMap::new();
+		// Towers to be considered, mapped to added cost
+		let mut towers_to_be_considered: HashMap<Point, f64> = HashMap::new();
 
-    // Grab among (us) the towers that cover the most
-    let mut ordered_possibles: Vec<(Point, u32)> = d
-      .into_iter()
-      .collect::<Vec<(Point, u32)>>();
-    ordered_possibles.sort_by_key(|a| a.1);
-    ordered_possibles.reverse();
-    
-    let max = ordered_possibles[0].1;
-    let total = ordered_possibles.len();
-    let mut index = 0;
+		// Grab among (us) the towers that cover the most
+		let mut ordered_possibles: Vec<(Point, u32)> = d.into_iter().collect::<Vec<(Point, u32)>>();
+		ordered_possibles.sort_by_key(|a| a.1);
+		ordered_possibles.reverse();
 
-    // First extract all max value ones
-    for i in 0..total {
-      let possible = ordered_possibles[i];
-      if possible.1 == max { 
-        index += 1;
-        towers_to_be_considered.insert(possible.0, 0.0);
-        
-      } else {
-        break;
-      }
-    }
+		let max = ordered_possibles[0].1;
+		let total = ordered_possibles.len();
+		let mut index = 0;
 
-    // Next extract PERCENT_REMAINING of the rest
-    let end = std::cmp::min(
-      ((total - index) as f32 * PERCENT_REMAINING) as usize,
-      total);
+		// First extract all max value ones
+		for i in 0..total {
+			let possible = ordered_possibles[i];
+			if possible.1 == max {
+				index += 1;
+				towers_to_be_considered.insert(possible.0, 0.0);
+			} else {
+				break;
+			}
+		}
 
-    for i in index..end {
-      towers_to_be_considered.insert(ordered_possibles[i].0, 0.0);
-    }
+		// Next extract PERCENT_REMAINING of the rest
+		let end = std::cmp::min(((total - index) as f32 * PERCENT_REMAINING) as usize, total);
 
-    // Now test inserting each tower into grid, updating added cost value
+		for i in index..end {
+			towers_to_be_considered.insert(ordered_possibles[i].0, 0.0);
+		}
 
-    for (tower, cost) in towers_to_be_considered.iter_mut() {
-      grid.add_tower(tower.get_x(), tower.get_y());
-      *cost += grid.penalty();
-      grid.remove_tower(tower.get_x(), tower.get_y())
-    }
+		// Now test inserting each tower into grid, updating added cost value
 
-    // Pick the tower that adds the lowest cost
-    let tower_to_add = towers_to_be_considered
-      .iter()
-      // Rust doesn't allow ordering by float, so just compare the integers for now
-      // TODO https://docs.rs/float-cmp/0.5.2/float_cmp/ ?
-      .max_by(|a, b| (*a.1 as u32).cmp(&(*b.1 as u32)) )
-      .unwrap().0;
+		for (tower, cost) in towers_to_be_considered.iter_mut() {
+			grid.add_tower(tower.get_x(), tower.get_y());
+			*cost += grid.penalty();
+			grid.remove_tower(tower.get_x(), tower.get_y())
+		}
 
-    grid.add_tower(tower_to_add.get_x(), tower_to_add.get_y());
+		// Pick the tower that adds the lowest cost
+		let tower_to_add = towers_to_be_considered
+			.iter()
+			// Rust doesn't allow ordering by float, so just compare the integers for now
+			// TODO https://docs.rs/float-cmp/0.5.2/float_cmp/ ?
+			.max_by(|a, b| (*a.1 as u32).cmp(&(*b.1 as u32)))
+			.unwrap()
+			.0;
+
+		grid.add_tower(tower_to_add.get_x(), tower_to_add.get_y());
 
 
-    // Only consider cities not already covered
+		// Only consider cities not already covered
 
-    let mut new_cities: Vec<Point> = Vec::new();
-    for city in cities.iter() {
-      if grid.get_cities_ref().get(city).unwrap().len() == 0 {
-        new_cities.push(city.clone());
-      }
-    }
-    cities = new_cities;
+		let mut new_cities: Vec<Point> = Vec::new();
+		for city in cities.iter() {
+			if grid.get_cities_ref().get(city).unwrap().len() == 0 {
+				new_cities.push(city.clone());
+			}
+		}
+		cities = new_cities;
+	}
 
-  }
-
-  grid.write_solution(output_path);
+	grid.write_solution(output_path);
 }
-
 
 
 // -- Linear Programming --
 // TODO: move out of grid class
 pub fn linear_programming(grid: &mut Grid) {
-  grid.lp_solve(LP_CUTOFF_TIME);
+	grid.lp_solve(LP_CUTOFF_TIME);
 }
-
 
 
 // -- Randomize Valid Solution threaded
@@ -158,8 +149,8 @@ pub fn randomize_valid_solution_with_lp(grid: &mut Grid, output_path: &str) {
 	let mut best_penalty_so_far = f64::INFINITY;
 	let sw = Stopwatch::start_new();
 
-  // Grab a valid solution and see if it is better
-  // TODO: prevent getting same one over and over
+	// Grab a valid solution and see if it is better
+	// TODO: prevent getting same one over and over
 	while sw.elapsed().as_secs() < SECS_PER_INPUT {
 		let p = grid.random_lp_solve(CUTOFF_TIME, rng.gen_range(1..=u32::MAX));
 		// println!("{} penalty: {}", i, p);
@@ -172,10 +163,9 @@ pub fn randomize_valid_solution_with_lp(grid: &mut Grid, output_path: &str) {
 		if sw.elapsed().as_secs() % 10 == 0 {
 			println!("{} secs passed. Best so far: {}", time, best_penalty_so_far);
 		}
-    // Reset grid
-    grid.remove_all_towers();
+		// Reset grid
+		grid.remove_all_towers();
 	}
 	println!("Best: {}", best_penalty_so_far);
 	println!("Valid: {}", grid.is_valid());
 }
-

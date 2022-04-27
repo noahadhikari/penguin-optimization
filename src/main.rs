@@ -14,6 +14,7 @@ mod solvers;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+
 use api::{get_api_result, InputType};
 use clap::{Parser, Subcommand};
 use grid::Grid;
@@ -103,8 +104,8 @@ fn main() {
 
 					// let mut grid = Grid::from_file(input);
 					let mut grid = Grid::from_file(input.to_str().unwrap())
-						.expect(format!("Failed to load grid from {}", input.to_str().unwrap()).as_str());		
-					
+						.expect(format!("Failed to load grid from {}", input.to_str().unwrap()).as_str());
+
 					solver(&mut grid, output.to_str().unwrap());
 				}
 			}
@@ -197,18 +198,13 @@ fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 		}
 		None => {
 			// Return all files the directory
-			let dir = fs::read_dir(in_path)
-				.map_err(|_| "Error reading directory")?;
-	
+			let dir = fs::read_dir(in_path).map_err(|_| "Error reading directory")?;
+
 			for path in dir {
-				let path = path
-					.map_err(|_| "Error reading directory")?
-					.path();
+				let path = path.map_err(|_| "Error reading directory")?.path();
 
 				// path will be in the form of "inputs/size/id.in"
-				let mut current_out = out_path
-					.clone()
-					.join(path.file_stem().unwrap());
+				let mut current_out = out_path.clone().join(path.file_stem().unwrap());
 
 				current_out.set_extension("out");
 
