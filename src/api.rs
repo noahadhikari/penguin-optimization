@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -31,8 +31,8 @@ pub enum InputType {
 pub async fn get_api_result(size: InputType) {
 	let input_type: &str;
 	// { test_number: [our_score, leaderboard_score], ... }
-	let mut worse_scores: HashMap<u8, Vec<f64>> = HashMap::new();
-	let mut better_scores: HashMap<u8, Vec<f64>> = HashMap::new();
+	let mut worse_scores: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
+	let mut better_scores: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
 
 	// Maps to directory name
 	match size {
@@ -42,7 +42,7 @@ pub async fn get_api_result(size: InputType) {
 	}
 
 	// Number of tests in each size
-	let input_count: HashMap<&str, u8> = HashMap::from([("small", 241), ("medium", 239), ("large", 239)]);
+	let input_count: BTreeMap<&str, u8> = BTreeMap::from([("small", 241), ("medium", 239), ("large", 239)]);
 
 	let count = *input_count.get(input_type).unwrap();
 	for i in 1..=count {
@@ -79,12 +79,12 @@ pub async fn get_api_result(size: InputType) {
 	println!("\n\n\n\n");
 	println!("{} Better:", better_scores.len());
 	for (key, value) in better_scores {
-		println!("Test {}. Ours: {}. Best: {}", key, value[0], value[1]);
+		println!("Test {}. Ours: {}. Best: {}. Diff: {}", key, value[0], value[1], round(value[1] - value[0]));
 	}
 
 	println!("\n{} Worse:", worse_scores.len());
 	for (key, value) in worse_scores {
-		println!("Test {}. Ours: {}. Best: {}", key, value[0], value[1]);
+		println!("Test {}. Ours: {}. Best: {}. Diff: {}", key, value[0], value[1], round(value[0] - value[1]));
 	}
 }
 
