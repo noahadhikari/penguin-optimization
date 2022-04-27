@@ -5,6 +5,7 @@
   - [Requirements](#requirements)
   - [Usage](#usage)
     - [`list` or `ls`](#list-or-ls)
+    - [`api` or `q`](#api-or-q)
     - [`solve`](#solve)
       - [EXAMPLES:](#examples)
   - [Directory Structure](#directory-structure)
@@ -68,6 +69,20 @@ Or equivalently (this builds it for you)
 
 ### `list` or `ls`
 This lists all available solvers
+
+### `api` or `q`
+USAGE:
+```bash
+... api <size>
+```
+Where size can be
+- small (s)
+- medium (m)
+- large (l)
+
+This `q`ueries the 170 leader board API to find which outputs have better/worse scores than the current ones.
+
+*The API is limited to 5 QPS, so the output pauses sometimes*
 
 ### `solve`
 USAGE:

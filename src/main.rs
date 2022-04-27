@@ -49,6 +49,13 @@ enum Commands {
 	#[clap(alias = "ls")]
 	List,
 
+	/// Query the API
+	#[clap(alias = "q")]
+	Api {
+		#[clap(default_value = "s", parse(try_from_str=api::input_size_from_string))]
+		size: InputType,
+	},
+
 	/// Run a solver on several specified inputs
 	#[clap(arg_required_else_help = true)]
 	Solve {
@@ -66,8 +73,6 @@ enum Commands {
 }
 
 fn main() {
-
-	
 	let args = Args::parse();
 
 	match &args.command {
@@ -77,6 +82,10 @@ fn main() {
 			for (name, _) in SOLVERS.entries() {
 				println!("\t{}", name);
 			}
+		}
+		// -- API --
+		Commands::Api { size } => {
+			get_api_result(size);
 		}
 		// -- SOLVE --
 		Commands::Solve { solver, paths } => {
