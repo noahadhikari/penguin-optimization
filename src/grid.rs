@@ -260,7 +260,7 @@ impl Grid {
 	}
 
 	/// Randomly solves the Grid using LP up until the max time and
-	/// returns (penalty, Grid).
+	/// returns (penalty, towers).
 	pub fn random_lp_solve(&mut self, max_time: u32, seed: u32) -> f64 {
 		let mut city_keys = HashSet::new();
 		for (&c, _) in self.cities.iter() {
