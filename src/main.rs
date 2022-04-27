@@ -12,8 +12,6 @@ mod point;
 
 // crate imports
 // use point::preprocess::setup_persistence;
-use grid::Grid;
-
 // std imports
 use std::collections::HashMap;
 // use std::fmt::Error;
@@ -23,9 +21,10 @@ use std::io::{self, BufReader, Write};
 use std::path::Path;
 use std::{fs, u32};
 
-//other imports
-use rayon::prelude::*;
+use grid::Grid;
 use rand::{thread_rng, Rng};
+// other imports
+use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
 fn solve_all_inputs() {
@@ -127,22 +126,23 @@ fn solve_one_randomized(grid_orig: &Grid, output_path: &str, secs_per_input: u64
 }
 
 fn solve_one_random_threaded(input_path: &str, output_path: &str, secs_per_input: u64) {
-	
 	let mut grids = vec![];
 	for _ in 0..(num_cpus::get()) {
 		let grid = get_grid(input_path).unwrap();
 		grids.push(grid);
 	}
-	grids.par_iter().for_each(|g| solve_one_randomized(g, output_path, secs_per_input));
+	grids
+		.par_iter()
+		.for_each(|g| solve_one_randomized(g, output_path, secs_per_input));
 }
 
 fn main() {
 	// solve_all_inputs();
 	// solve_one_input();
 	// setup_persistence();
-	// solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out", 60);
+	// solve_one_random_threaded("inputs/small/003.in", "outputs/small/003.out",
+	// 60);
 	solve_all_randomized();
-	
 }
 
 // Algorithms
