@@ -6,10 +6,10 @@
 extern crate lazy_static;
 extern crate num_cpus;
 
+mod api;
 mod grid;
 mod lp;
 mod point;
-mod api;
 
 // crate imports
 // use point::preprocess::setup_persistence;
@@ -21,8 +21,8 @@ use std::io::prelude::*;
 use std::io::{self, BufReader, Write};
 use std::path::Path;
 use std::{fs, u32};
-use api::{get_api_result, InputType, get_penalty_from_file};
 
+use api::{get_api_result, get_penalty_from_file, InputType};
 use grid::Grid;
 use rand::{thread_rng, Rng};
 // other imports
@@ -206,7 +206,7 @@ fn write_sol(grid: &Grid, path: &str) {
 	// Only overwrite if solution is better than what we currently have
 	if Path::new(path).is_file() {
 		let existing_penalty = get_penalty_from_file(path);
-		
+
 		if grid.penalty() >= existing_penalty {
 			return;
 		}
