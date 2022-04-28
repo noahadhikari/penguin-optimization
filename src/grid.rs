@@ -174,7 +174,7 @@ impl Grid {
 		// println!("t = {}, \n coverage = {:#?}", t, coverage);
 
 		for (c, ts) in self.cities.iter_mut() {
-			if coverage.contains(&c) && !ts.contains(&t) {
+			if (c == &t) || (coverage.contains(c) && !ts.contains(&t)) {
 				ts.insert(t);
 			}
 		}

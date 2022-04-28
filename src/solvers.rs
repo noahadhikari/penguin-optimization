@@ -276,9 +276,21 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> 
 	let mut changed = false;
 	let old_towers = (*grid.get_towers_ref()).clone();
 	let mut rng = thread_rng();
-	'outer: for (tower, _) in old_towers {
+	'outer: for &tower in old_towers.keys() {
+		// first sees if valid even without this tower, and if so
+		// removes it.
+		grid.remove_tower(tower.x, tower.y);
+		if grid.is_valid() {
+			changed = true;
+			grid.write_solution(output_path);
+			break 'outer;
+		} else {
+			grid.add_tower(tower.x, tower.y);
+		}
+
 		let mut adj_towers: Vec<Point> = adjacent_towers(grid, tower, HILLCLIMB_RADIUS).into_iter().collect();
 		adj_towers.shuffle(&mut rng);
+		// now tries to move the tower to a better location
 		for adj_tower in adj_towers {
 			// change r (third value) if desired
 			grid.move_tower(tower, adj_tower);
