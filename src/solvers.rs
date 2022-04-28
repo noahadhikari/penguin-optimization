@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use colored::Colorize;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
@@ -22,6 +23,8 @@ const SECS_PER_INPUT: u64 = 60;
 const CUTOFF_TIME: u32 = 60; // max time in seconds
 const ITERATIONS: u32 = 10000;
 
+// Randomized hillclimb parameters
+const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 25;
 
 // ------- Solver functions -------
 
@@ -197,7 +200,6 @@ pub fn hillclimb(grid: &mut Grid, output_path: &str) {
 /// there are none, shuffles and reruns hillclimb. Repeats for a certain number
 /// of iterations per thread.
 pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
-	let iterations_per_thread = 25;
 	let initial_towers = Grid::towers_from_file(output_path);
 	for tower in initial_towers {
 		grid.add_tower(tower.x, tower.y);
@@ -209,7 +211,7 @@ pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
 	}
 	grids
 		.par_iter_mut()
-		.for_each(|g: &mut Grid| rand_hillclimb(g, output_path, iterations_per_thread));
+		.for_each(|g: &mut Grid| rand_hillclimb(g, output_path, HILLCLIMB_ITERATIONS_PER_THREAD, old_penalty));
 
 	let new_towers = Grid::towers_from_file(output_path);
 	grid.remove_all_towers();
@@ -218,25 +220,23 @@ pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
 	}
 	let new_penalty = round(grid.penalty());
 	if new_penalty < old_penalty {
-		println!("Improved! {} -> {}", old_penalty, new_penalty);
+		println!("{} Total_improvement {} -> {}", "Improved!".green(), old_penalty, new_penalty);
 	} else {
 		println!("Randomized hillclimb could not improve. {}", new_penalty);
 	}
 }
 
-/// Same as normal hillclimb, except randomizes the grid when reaching a peak,
-/// and redoes hillclimb.
-fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize) {
+/// Same as normal hillclimb, except randomizes the grid when reaching a peak, and redoes hillclimb.
+fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_penalty: f64) {
 	let mut rng = thread_rng();
-
-	let old_penalty = round(grid.penalty());
-	let mut best_new_penalty = old_penalty;
+	
 	for i in 0..(iterations + 1) {
-		let old_penalty = round(grid.penalty());
 		loop {
 			if !hillclimb_helper(grid, output_path) {
-				// println!("Iteration {}: {} -> {}", i, old_penalty, round(grid.penalty()));
-				best_new_penalty = best_new_penalty.min(round(grid.penalty()));
+				let pen = round(grid.penalty());
+				if pen < global_penalty {
+					println!("Improvement on iteration {}: {} -> {}", i, global_penalty, pen);
+				}
 				grid.random_lp_solve(1, rng.gen_range(1..=u32::MAX)); // reinitialize LP-pseudorandom towers
 				break;
 			}
