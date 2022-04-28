@@ -25,7 +25,7 @@ const CUTOFF_TIME: u32 = 60; // max time in seconds
 const ITERATIONS: u32 = 10000;
 
 // Randomized hillclimb parameters
-const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 200;
+const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 64;
 // works best with 3 (any), 8 (small), 10 (medium), 14 (large).
 // brute-force is grid dimension: 30 (small), 50 (medium), 100 (large)
 const HILLCLIMB_RADIUS: u8 = 3; 
@@ -246,8 +246,9 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_
 				let pen = round(grid.penalty());
 				if pen < global_penalty {
 					println!("Improvement on iteration {}: {} -> {}", i, global_penalty, pen);
+					grid.write_solution(output_path);
 				} else if i % 10 == 0 {
-					println!("No improvement by iteration {}.", i);
+					// println!("No improvement by iteration {}.", i);
 				}
 				grid.random_lp_solve(1, rng.gen_range(1..=u32::MAX)); // reinitialize LP-pseudorandom towers
 				break;
