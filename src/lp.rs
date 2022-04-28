@@ -56,7 +56,7 @@ impl GridProblem {
 		for i in 0..(self.dim as usize) {
 			for j in 0..(self.dim as usize) {
 				let p = Point::new(i as i32, j as i32);
-				let coverage = Point::points_within_radius(p, self.r_p, self.dim);
+				let coverage = Point::points_within_radius(p, self.r_p, self.dim).unwrap();
 				for point in coverage {
 					let k = point.x as usize;
 					let l = point.y as usize;
@@ -78,7 +78,7 @@ impl GridProblem {
 	/// Adds the city coverage constraints to the LP.
 	fn add_city_constraints(&mut self, cities: HashSet<Point>) {
 		for c in cities {
-			let coverage = Point::points_within_radius(c, self.r_s, self.dim);
+			let coverage = Point::points_within_radius(c, self.r_s, self.dim).unwrap();
 			let mut sum = Expression::with_capacity(coverage.len());
 			for point in coverage {
 				sum.add_mul(1, self.t[point.x as usize][point.y as usize]);

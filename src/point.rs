@@ -75,7 +75,8 @@ pub mod preprocess {
 		for i in 0..dim {
 			for j in 0..dim {
 				let p = Point::new(i.into(), j.into());
-				let points_within = Point::points_within_naive(p, r, dim);
+				let mut points_within = Point::points_within_naive(p, r, dim);
+				points_within.remove(&p);
 				map.insert(p, points_within);
 			}
 		}
@@ -208,7 +209,7 @@ impl Point {
 
 	/// Returns a set of all the grid points within the given radius of the given
 	/// point.
-	pub fn points_within_radius(p: Point, r: u8, dim: u8) -> &'static HashSet<Point> {
+	pub fn points_within_radius(p: Point, r: u8, dim: u8) -> Result<&'static HashSet<Point>, &'static str> {
 		let result = match (dim, r) {
 			(30, 8) => PEN_S.get(&p),
 			(50, 10) => PEN_M.get(&p),
@@ -216,12 +217,12 @@ impl Point {
 			(30, 3) => SVC_S.get(&p),
 			(50, 3) => SVC_M.get(&p),
 			(100, 3) => SVC_L.get(&p),
-			_ => panic!("Invalid size / radius combination"),
+			_ => None
 		};
 		// println!("{}: {:?}", p, result);
 		match result {
-			Some(result) => result,
-			None => panic!("No points found for {} in r={}, dim={}", p, r, dim),
+			Some(result) => Ok(result),
+			None => panic!("No preprocessing done for {} in r={}, dim={}.\nConsider using points_within_naive instead.", p, r, dim),
 		}
 	}
 

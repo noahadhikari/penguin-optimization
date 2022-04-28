@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
 use crate::grid::Grid;
+use crate::api::round;
 use crate::point::Point;
 
 
@@ -53,7 +54,7 @@ pub fn greedy(grid: &mut Grid, output_path: &str) {
 		let mut d: HashMap<Point, u32> = HashMap::new();
 
 		for city in &cities {
-			for possible_tower in Point::points_within_radius(*city, grid.service_radius(), grid.dimension()) {
+			for possible_tower in Point::points_within_radius(*city, grid.service_radius(), grid.dimension()).unwrap() {
 				let counter = d.entry(*possible_tower).or_insert(0);
 				*counter += 1
 			}
@@ -167,4 +168,108 @@ pub fn randomize_valid_solution_with_lp(grid: &mut Grid, output_path: &str) {
 		grid.remove_all_towers();
 	}
 	println!("Best: {}", best_penalty_so_far);
+}
+
+/// First grabs the current solution we have.
+/// Then, sees if any improvements can be made by moving a tower slightly, and makes them.
+pub fn hillclimb(grid: &mut Grid, output_path: &str) {
+	// println!("Hillclimbing for {}", output_path);
+	let initial_towers = Grid::towers_from_file(output_path);
+	for tower in initial_towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	let old_penalty = round(grid.penalty());
+	
+	if hillclimb_helper(grid, output_path) {
+		grid.remove_all_towers();
+		hillclimb(grid, output_path);
+	}
+	let new_penalty = round(grid.penalty());
+	if new_penalty < old_penalty {
+		println!("Improved! {} -> {}", old_penalty, new_penalty);
+	} else {
+		println!("Hillclimb could not improve. {}", new_penalty);
+	}
+}
+
+/// Multithreaded randomized hillclimb. Looks at locally optimal choices, and if there are none, shuffles and reruns hillclimb.
+/// Repeats for a certain number of iterations per thread.
+pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
+	let iterations_per_thread = 25;
+	let initial_towers = Grid::towers_from_file(output_path);
+	for tower in initial_towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	let old_penalty = round(grid.penalty());
+	let mut grids: Vec<_> = vec![];
+	for _ in 0..(num_cpus::get()) {
+		grids.push(grid.clone());
+	}
+	grids
+		.par_iter_mut()
+		.for_each(|g: &mut Grid| rand_hillclimb(g, output_path, iterations_per_thread));
+
+	let new_towers = Grid::towers_from_file(output_path);
+	grid.remove_all_towers();
+	for tower in new_towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	let new_penalty = round(grid.penalty());
+	if new_penalty < old_penalty {
+		println!("Improved! {} -> {}", old_penalty, new_penalty);
+	} else {
+		println!("Randomized hillclimb could not improve. {}", new_penalty);
+	}
+}
+
+/// Same as normal hillclimb, except randomizes the grid when reaching a peak, and redoes hillclimb.
+fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize) {
+	let mut rng = thread_rng();
+	
+	let old_penalty = round(grid.penalty());
+	let mut best_new_penalty = old_penalty;
+	for i in 0..(iterations + 1) {
+		let old_penalty = round(grid.penalty());
+		loop {
+			if !hillclimb_helper(grid, output_path) {
+				// println!("Iteration {}: {} -> {}", i, old_penalty, round(grid.penalty()));
+				best_new_penalty = best_new_penalty.min(round(grid.penalty()));
+				grid.random_lp_solve(1, rng.gen_range(1..=u32::MAX)); // reinitialize LP-pseudorandom towers
+				break;
+			}
+		}
+	}
+}
+
+/// Runs hillclimb on this grid and returns whether any improvements were made.
+fn hillclimb_helper(grid: &mut Grid, output_path: &str) -> bool {
+	fn adjacent_towers(g: &Grid, t: Point, r: u8) -> HashSet<Point> {
+		//need to change to points_within_naive if want to use different r values.
+		let mut adjacent_towers: HashSet<Point> = Point::points_within_radius(t, r, g.dimension()).unwrap().clone();
+		for (tower, _) in g.get_towers_ref() {
+			adjacent_towers.remove(tower);
+		}
+		adjacent_towers
+	}
+
+	let old_penalty = grid.penalty();
+	let mut changed = false;
+	let old_towers = (*grid.get_towers_ref()).clone();
+	'outer: for (tower, _) in old_towers {
+		for adj_tower in adjacent_towers(grid, tower, grid.penalty_radius()) { // change r (third value) if desired
+			grid.move_tower(tower, adj_tower);
+			
+			if grid.is_valid() {
+				let new_penalty = grid.penalty();
+				if round(new_penalty) < round(old_penalty) {
+					changed = true;
+					// println!("{} -> {}, Old: {}, New: {}", tower, adj_tower, old_penalty, new_penalty);
+					grid.write_solution(output_path);
+					break 'outer;
+				}
+			}
+			grid.move_tower(adj_tower, tower); //undo move
+		}
+	}
+	changed
 }
