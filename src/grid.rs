@@ -154,7 +154,7 @@ impl Grid {
 	/// Updates the penalized towers for each tower within the penalty radius of
 	/// T.
 	fn update_towers_add(&mut self, p: Point) {
-		let penalized = Point::points_within_radius(p, self.penalty_radius, self.dimension);
+		let penalized = Point::points_within_radius(p, self.penalty_radius, self.dimension).unwrap();
 
 		let mut adj_towers = HashSet::new();
 		for (&tower, set) in self.towers.iter_mut() {
@@ -170,7 +170,7 @@ impl Grid {
 	/// Adds T to the covering towers for each city within the service radius of
 	/// T.
 	fn update_cities_add(&mut self, t: Point) {
-		let coverage = Point::points_within_radius(t, self.service_radius, self.dimension);
+		let coverage = Point::points_within_radius(t, self.service_radius, self.dimension).unwrap();
 		// println!("t = {}, \n coverage = {:#?}", t, coverage);
 
 		for (c, ts) in self.cities.iter_mut() {
@@ -218,7 +218,7 @@ impl Grid {
 	pub fn move_tower(&mut self, p: Point, q: Point) {
 		assert!(
 			self.towers.contains_key(&p),
-			"Cannot move tower at {:?} because it does not exist.",
+			"Cannot move tower from {:?} because it does not exist.",
 			p
 		);
 		assert!(
@@ -345,7 +345,11 @@ impl Grid {
 		assert!(self.is_valid(), "Not a valid solution");
 		// Only overwrite if solution is better than what we currently have
 		if Path::new(output_path).is_file() {
-			let existing_penalty = api::get_penalty_from_file(output_path);
+			let mut existing_penalty = 0.;
+			while existing_penalty == 0. {
+				existing_penalty = api::round(api::get_penalty_from_file(output_path).unwrap_or(0.));
+			}
+
 			if self.penalty() >= existing_penalty {
 				return;
 			}
@@ -362,7 +366,7 @@ impl Grid {
 	}
 
 	/// Randomly solves the Grid using LP up until the max time and
-	/// returns (penalty, towers).
+	/// returns penalty.
 	pub fn random_lp_solve(&mut self, max_time: u32, seed: u32) -> f64 {
 		let mut city_keys = HashSet::new();
 		for (&c, _) in self.cities.iter() {

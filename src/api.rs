@@ -64,7 +64,7 @@ pub async fn get_api_result(size: &InputType) {
 					continue;
 				}
 
-				let our_penalty = round(get_penalty_from_file(our_path.as_str()));
+				let our_penalty = round(get_penalty_from_file(our_path.as_str()).unwrap());
 				let rounded_leaderboard = round(leaderboard_penalty);
 
 				if our_penalty > rounded_leaderboard {
@@ -107,19 +107,23 @@ fn sort_by_diff(scores: HashMap<u8, (f64, f64)>) -> Vec<(u8, (f64, f64))> {
 }
 
 /// Rounds number to 6 decimal places to avoid floating point errors
-fn round(n: f64) -> f64 {
+pub fn round(n: f64) -> f64 {
 	(n * 1000000.0).round() / 1000000.0
 }
 
 /// Gets our penalty from a specific file
-pub fn get_penalty_from_file(path: &str) -> f64 {
+pub fn get_penalty_from_file(path: &str) -> Result<f64, &'static str> {
 	let file = File::open(path).unwrap();
 	let reader = BufReader::new(file);
 	let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
-	let penalty_line = lines.get(0).unwrap(); // Penalty = xxx
+	let fail_str = &"".to_string();
+	let mut penalty_line = fail_str;
+	while penalty_line == fail_str {
+		penalty_line = lines.get(0).unwrap_or(&fail_str); // Penalty = xxx
+	} 
 	let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
 	let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
-	existing_penalty
+	Ok(existing_penalty)
 }
 
 /// Returns the best leaderboard score for the given test case
