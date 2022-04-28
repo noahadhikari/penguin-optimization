@@ -220,16 +220,22 @@ pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
 	}
 	let new_penalty = round(grid.penalty());
 	if new_penalty < old_penalty {
-		println!("{} Total_improvement {} -> {}", "Improved!".green(), old_penalty, new_penalty);
+		println!(
+			"{} Total_improvement {} -> {}",
+			"Improved!".green(),
+			old_penalty,
+			new_penalty
+		);
 	} else {
 		println!("Randomized hillclimb could not improve. {}", new_penalty);
 	}
 }
 
-/// Same as normal hillclimb, except randomizes the grid when reaching a peak, and redoes hillclimb.
+/// Same as normal hillclimb, except randomizes the grid when reaching a peak,
+/// and redoes hillclimb.
 fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_penalty: f64) {
 	let mut rng = thread_rng();
-	
+
 	for i in 0..(iterations + 1) {
 		loop {
 			if !hillclimb_helper(grid, output_path) {
