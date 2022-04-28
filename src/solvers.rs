@@ -244,6 +244,7 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize) {
 /// Runs hillclimb on this grid and returns whether any improvements were made.
 fn hillclimb_helper(grid: &mut Grid, output_path: &str) -> bool {
 	fn adjacent_towers(g: &Grid, t: Point, r: u8) -> HashSet<Point> {
+		//need to change to points_within_naive if want to use different r values.
 		let mut adjacent_towers: HashSet<Point> = Point::points_within_radius(t, r, g.dimension()).unwrap().clone();
 		for (tower, _) in g.get_towers_ref() {
 			adjacent_towers.remove(tower);

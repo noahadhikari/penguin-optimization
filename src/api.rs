@@ -116,11 +116,10 @@ pub fn get_penalty_from_file(path: &str) -> Result<f64, &'static str> {
 	let file = File::open(path).unwrap();
 	let reader = BufReader::new(file);
 	let lines: Vec<String> = reader.lines().collect::<Result<_, _>>().unwrap();
-	let fail_str = &"".to_string();
-	let mut penalty_line = fail_str;
-	while penalty_line == fail_str {
-		penalty_line = lines.get(0).unwrap_or(&fail_str); // Penalty = xxx
-	} 
+	let penalty_line = match lines.get(0) {
+		Some(line) => line,
+		None => return Err("Could not read line"),
+	}; // Penalty = xxx
 	let split_line: Vec<&str> = penalty_line.split_whitespace().collect();
 	let existing_penalty: f64 = split_line.get(3).unwrap().parse::<f64>().unwrap();
 	Ok(existing_penalty)
