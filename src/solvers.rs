@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use colored::Colorize;
 use rand::{thread_rng, Rng};
+use rand::{seq::SliceRandom};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
@@ -24,7 +25,10 @@ const CUTOFF_TIME: u32 = 60; // max time in seconds
 const ITERATIONS: u32 = 10000;
 
 // Randomized hillclimb parameters
-const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 25;
+const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 200;
+// works best with 3 (any), 8 (small), 10 (medium), 14 (large).
+// brute-force is grid dimension: 30 (small), 50 (medium), 100 (large)
+const HILLCLIMB_RADIUS: u8 = 3; 
 
 // ------- Solver functions -------
 
@@ -184,7 +188,7 @@ pub fn hillclimb(grid: &mut Grid, output_path: &str) {
 	}
 	let old_penalty = round(grid.penalty());
 
-	if hillclimb_helper(grid, output_path) {
+	if hillclimb_helper(grid, output_path, old_penalty) {
 		grid.remove_all_towers();
 		hillclimb(grid, output_path);
 	}
@@ -232,10 +236,12 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_
 	
 	for i in 0..(iterations + 1) {
 		loop {
-			if !hillclimb_helper(grid, output_path) {
+			if !hillclimb_helper(grid, output_path, global_penalty) {
 				let pen = round(grid.penalty());
 				if pen < global_penalty {
 					println!("Improvement on iteration {}: {} -> {}", i, global_penalty, pen);
+				} else if i % 10 == 0 {
+					println!("No improvement by iteration {}.", i);
 				}
 				grid.random_lp_solve(1, rng.gen_range(1..=u32::MAX)); // reinitialize LP-pseudorandom towers
 				break;
@@ -245,21 +251,29 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_
 }
 
 /// Runs hillclimb on this grid and returns whether any improvements were made.
-fn hillclimb_helper(grid: &mut Grid, output_path: &str) -> bool {
-	fn adjacent_towers(g: &Grid, t: Point, r: u8) -> HashSet<Point> {
+fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> bool {
+	fn adjacent_towers(g: &Grid, t: Point, r: u8) -> Vec<Point> {
 		// need to change to points_within_naive if want to use different r values.
-		let mut adjacent_towers: HashSet<Point> = Point::points_within_radius(t, r, g.dimension()).unwrap().clone();
+		
+		let mut adjacent_towers: HashSet<Point> = match r {
+			3 | 8 | 10 | 14 => {Point::points_within_radius(t, r, g.dimension()).unwrap().clone()}
+			_ => {Point::points_within_naive(t, r, g.dimension())}
+		};
 		for (tower, _) in g.get_towers_ref() {
 			adjacent_towers.remove(tower);
 		}
-		adjacent_towers
+		adjacent_towers.into_iter().collect()
+
 	}
 
 	let old_penalty = grid.penalty();
 	let mut changed = false;
 	let old_towers = (*grid.get_towers_ref()).clone();
+	let mut rng = thread_rng();
 	'outer: for (tower, _) in old_towers {
-		for adj_tower in adjacent_towers(grid, tower, grid.penalty_radius()) {
+		let mut adj_towers: Vec<Point> = adjacent_towers(grid, tower, HILLCLIMB_RADIUS).into_iter().collect();
+		adj_towers.shuffle(&mut rng);
+		for adj_tower in adj_towers {
 			// change r (third value) if desired
 			grid.move_tower(tower, adj_tower);
 
@@ -269,7 +283,9 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str) -> bool {
 					changed = true;
 					// println!("{} -> {}, Old: {}, New: {}", tower, adj_tower, old_penalty,
 					// new_penalty);
-					grid.write_solution(output_path);
+					if round(new_penalty) < round(global_penalty) {
+						grid.write_solution(output_path);
+					}
 					break 'outer;
 				}
 			}
