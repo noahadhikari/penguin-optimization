@@ -217,12 +217,15 @@ impl Point {
 			(30, 3) => SVC_S.get(&p),
 			(50, 3) => SVC_M.get(&p),
 			(100, 3) => SVC_L.get(&p),
-			_ => None
+			_ => None,
 		};
 		// println!("{}: {:?}", p, result);
 		match result {
 			Some(result) => Ok(result),
-			None => panic!("No preprocessing done for {} in r={}, dim={}.\nConsider using points_within_naive instead.", p, r, dim),
+			None => panic!(
+				"No preprocessing done for {} in r={}, dim={}.\nConsider using points_within_naive instead.",
+				p, r, dim
+			),
 		}
 	}
 

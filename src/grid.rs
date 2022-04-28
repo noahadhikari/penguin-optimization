@@ -213,7 +213,7 @@ impl Grid {
 		}
 	}
 
-	/// Moves a tower from P = (x, y) to Q = (x', y'). 
+	/// Moves a tower from P = (x, y) to Q = (x', y').
 	/// Fails if tower at P does not exist or if tower at Q already exists.
 	pub fn move_tower(&mut self, p: Point, q: Point) {
 		assert!(
@@ -425,8 +425,14 @@ impl Grid {
 		let mut i: i32 = 0;
 		for line in reader.lines() {
 			match i {
-				0 => {i += 1; continue;}
-				1 => {i += 1; continue;}
+				0 => {
+					i += 1;
+					continue;
+				}
+				1 => {
+					i += 1;
+					continue;
+				}
 				_ => {
 					if let Ok(l) = line {
 						let vec: Vec<&str> = l.split_whitespace().collect();
@@ -439,5 +445,4 @@ impl Grid {
 		}
 		towers
 	}
-
 }
