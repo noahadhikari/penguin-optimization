@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use colored::Colorize;
+use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
-use rand::{seq::SliceRandom};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
@@ -28,7 +28,7 @@ const ITERATIONS: u32 = 10000;
 const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 200;
 // works best with 3 (any), 8 (small), 10 (medium), 14 (large).
 // brute-force is grid dimension: 30 (small), 50 (medium), 100 (large)
-const HILLCLIMB_RADIUS: u8 = 3; 
+const HILLCLIMB_RADIUS: u8 = 3;
 
 // ------- Solver functions -------
 
@@ -260,16 +260,15 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_
 fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> bool {
 	fn adjacent_towers(g: &Grid, t: Point, r: u8) -> Vec<Point> {
 		// need to change to points_within_naive if want to use different r values.
-		
+
 		let mut adjacent_towers: HashSet<Point> = match r {
-			3 | 8 | 10 | 14 => {Point::points_within_radius(t, r, g.dimension()).unwrap().clone()}
-			_ => {Point::points_within_naive(t, r, g.dimension())}
+			3 | 8 | 10 | 14 => Point::points_within_radius(t, r, g.dimension()).unwrap().clone(),
+			_ => Point::points_within_naive(t, r, g.dimension()),
 		};
 		for (tower, _) in g.get_towers_ref() {
 			adjacent_towers.remove(tower);
 		}
 		adjacent_towers.into_iter().collect()
-
 	}
 
 	let old_penalty = grid.penalty();
