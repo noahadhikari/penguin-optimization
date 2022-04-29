@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use api::{get_api_result, InputType, is_score_worse_than_leader};
+use api::{get_api_result, is_score_worse_than_leader, InputType};
 use clap::{Parser, Subcommand};
 use grid::Grid;
 use phf::phf_map;
@@ -67,8 +67,8 @@ enum Commands {
 		/// large/1..4 OR large OR large/1..4 small/5
 		#[clap(required = true,	parse(try_from_str=get_paths))]
 		paths: Vec<Vec<(PathBuf, PathBuf)>>,
-		// Vec allows for multiple inputs in the after the solver name
 
+		// Vec allows for multiple inputs in the after the solver name
 		/// Only run solver on worse inputs
 		#[clap(long, short)]
 		worse: bool,
@@ -78,9 +78,8 @@ enum Commands {
 #[tokio::main]
 async fn main() {
 	let args = Args::parse();
-	
-	match &args.command {
 
+	match &args.command {
 		// -- LIST --
 		Commands::List => {
 			println!("List of solvers:");
@@ -93,7 +92,7 @@ async fn main() {
 		Commands::Api { size } => {
 			get_api_result(size).await;
 		}
-		
+
 		// -- SOLVE --
 		Commands::Solve { solver, paths, worse } => {
 			// Prevent solving multiple identical inputs
@@ -107,8 +106,9 @@ async fn main() {
 						continue;
 					}
 					path_list.insert(&input);
-					println!("Solving input {}/{}", 
-						input.parent().unwrap().file_stem().unwrap().to_str().unwrap(), 
+					println!(
+						"Solving input {}/{}",
+						input.parent().unwrap().file_stem().unwrap().to_str().unwrap(),
 						input.file_stem().unwrap().to_str().unwrap()
 					);
 

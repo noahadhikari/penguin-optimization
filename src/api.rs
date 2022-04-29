@@ -162,7 +162,8 @@ pub fn input_size_from_string(input: &str) -> Result<InputType, String> {
 	}
 }
 
-/// Return whether our score is worse (higher) than the current highest on the leaderboard
+/// Return whether our score is worse (higher) than the current highest on the
+/// leaderboard
 pub async fn is_score_worse_than_leader(path: &PathBuf) -> Result<bool, String> {
 	let input_type = path.parent().unwrap().file_stem().unwrap().to_str().unwrap();
 	let test_num = path.file_stem().unwrap().to_str().unwrap().parse::<u8>().unwrap();
