@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use api::{get_api_result, InputType};
+use api::{get_api_result, InputType, is_score_worse_than_leader};
 use clap::{Parser, Subcommand};
 use grid::Grid;
 use phf::phf_map;
@@ -68,13 +68,17 @@ enum Commands {
 		#[clap(required = true,	parse(try_from_str=get_paths))]
 		paths: Vec<Vec<(PathBuf, PathBuf)>>,
 		// Vec allows for multiple inputs in the after the solver name
+
+		/// Only run solver on worse inputs
+		#[clap(long, short)]
+		worse: bool,
 	},
 }
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
 	let args = Args::parse();
-
+	
 	match &args.command {
 		// -- LIST --
 		Commands::List => {
@@ -88,7 +92,7 @@ fn main() {
 			get_api_result(size);
 		}
 		// -- SOLVE --
-		Commands::Solve { solver, paths } => {
+		Commands::Solve { solver, paths, worse } => {
 			// Prevent solving multiple identical inputs
 			let mut path_list: HashSet<&PathBuf> = HashSet::new();
 
@@ -96,8 +100,8 @@ fn main() {
 			// Run the solver on each input
 			for path_set in paths {
 				for (input, output) in path_set {
-					// Ensure this input is unique
-					if path_list.contains(&input) {
+					let is_worse = *worse && !is_score_worse_than_leader(output).await;
+					if path_list.contains(&input) || is_worse {
 						continue;
 					}
 					path_list.insert(&input);
@@ -218,7 +222,7 @@ fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 	}
 }
 
-// Validates and converts a string to a solver function
+/// Validates and converts a string to a solver function
 fn get_solver(solver: &str) -> Result<SolverFn, String> {
 	SOLVERS
 		.get(solver)

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use reqwest;
 use serde::{Deserialize, Serialize};
@@ -89,7 +89,7 @@ pub async fn get_api_result(size: &InputType) {
 	}
 
 	println!("\n{} Worse:", worse_scores.len());
-	for (key, (ours, leaderboard)) in sort_by_diff(worse_scores) {
+	for (key, (ours, leaderboard)) in sort_by_diff(&worse_scores) {
 		println!(
 			"Test {}. Ours: {}. Best: {}. Diff: {}",
 			format!("{:0>3}", key),
@@ -100,8 +100,8 @@ pub async fn get_api_result(size: &InputType) {
 	}
 }
 
-fn sort_by_diff(scores: HashMap<u8, (f64, f64)>) -> Vec<(u8, (f64, f64))> {
-	let mut vec = scores.into_iter().collect::<Vec<(u8, (f64, f64))>>();
+fn sort_by_diff(scores: &HashMap<u8, (f64, f64)>) -> Vec<(u8, (f64, f64))> {
+	let mut vec = scores.to_owned().into_iter().collect::<Vec<(u8, (f64, f64))>>();
 	vec.sort_by(|a, b| (a.1 .1 - a.1 .0).partial_cmp(&(b.1 .1 - b.1 .0)).unwrap());
 	vec
 }
@@ -161,4 +161,15 @@ pub fn input_size_from_string(input: &str) -> Result<InputType, String> {
 		"large" | "l" => Ok(InputType::Large),
 		_ => Err("Input size needs to be \nsmall (s)\nmedium (m)\nlarge(l)".to_string()),
 	}
+}
+
+// TODO: Change unwraps to ?
+pub async fn is_score_worse_than_leader(path: &PathBuf) -> bool {
+	let input_type = path.parent().unwrap().file_stem().unwrap().to_str().unwrap();
+	let test_num = path.file_stem().unwrap().to_str().unwrap().parse::<u8>().unwrap();
+
+	let leaderboard_score = get_best_leaderboard_score(test_num, input_type).await.unwrap();
+	let our_score = get_penalty_from_file(path.to_str().unwrap()).unwrap();
+
+	return round(leaderboard_score) > round(our_score);
 }
