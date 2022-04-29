@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use reqwest;
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,6 @@ pub enum InputType {
 }
 
 /// Prints out the inputs we have better/worse scores than
-#[tokio::main]
 pub async fn get_api_result(size: &InputType) {
 	let input_type: &str;
 	// { test_number: (our_score, leaderboard_score), ... }
@@ -161,4 +160,15 @@ pub fn input_size_from_string(input: &str) -> Result<InputType, String> {
 		"large" | "l" => Ok(InputType::Large),
 		_ => Err("Input size needs to be \nsmall (s)\nmedium (m)\nlarge(l)".to_string()),
 	}
+}
+
+/// Return whether our score is worse (higher) than the current highest on the leaderboard
+pub async fn is_score_worse_than_leader(path: &PathBuf) -> Result<bool, String> {
+	let input_type = path.parent().unwrap().file_stem().unwrap().to_str().unwrap();
+	let test_num = path.file_stem().unwrap().to_str().unwrap().parse::<u8>().unwrap();
+
+	let leaderboard_score = get_best_leaderboard_score(test_num, input_type).await?;
+	let our_score = get_penalty_from_file(path.to_str().unwrap())?;
+
+	Ok(round(leaderboard_score) < round(our_score))
 }

@@ -15,7 +15,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use api::{get_api_result, InputType};
+use api::{get_api_result, InputType, is_score_worse_than_leader};
 use clap::{Parser, Subcommand};
 use grid::Grid;
 use phf::phf_map;
@@ -68,14 +68,19 @@ enum Commands {
 		#[clap(required = true,	parse(try_from_str=get_paths))]
 		paths: Vec<Vec<(PathBuf, PathBuf)>>,
 		// Vec allows for multiple inputs in the after the solver name
+
+		/// Only run solver on worse inputs
+		#[clap(long, short)]
+		worse: bool,
 	},
 }
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
 	let args = Args::parse();
-
+	
 	match &args.command {
+
 		// -- LIST --
 		Commands::List => {
 			println!("List of solvers:");
@@ -83,28 +88,30 @@ fn main() {
 				println!("\t{}", name);
 			}
 		}
+
 		// -- API --
 		Commands::Api { size } => {
-			get_api_result(size);
+			get_api_result(size).await;
 		}
+		
 		// -- SOLVE --
-		Commands::Solve { solver, paths } => {
+		Commands::Solve { solver, paths, worse } => {
 			// Prevent solving multiple identical inputs
 			let mut path_list: HashSet<&PathBuf> = HashSet::new();
 
-			// TODO: Make this parallel
 			// Run the solver on each input
 			for path_set in paths {
 				for (input, output) in path_set {
-					// Ensure this input is unique
-					if path_list.contains(&input) {
+					let is_worse = is_score_worse_than_leader(output).await.unwrap();
+					if path_list.contains(&input) || (*worse && !is_worse) {
 						continue;
 					}
 					path_list.insert(&input);
-					println!("{}", input.display());
+					println!("Solving input {}/{}", 
+						input.parent().unwrap().file_stem().unwrap().to_str().unwrap(), 
+						input.file_stem().unwrap().to_str().unwrap()
+					);
 
-
-					// let mut grid = Grid::from_file(input);
 					let mut grid = Grid::from_file(input.to_str().unwrap())
 						.expect(format!("Failed to load grid from {}", input.to_str().unwrap()).as_str());
 
@@ -131,7 +138,7 @@ fn check_id_range(id: u8) -> Result<bool, String> {
 	}
 }
 
-// Converts input string to a list of input and output paths
+/// Converts input string to a list of input and output paths
 fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 	// Assuming run from root directory
 	let mut paths: Vec<(PathBuf, PathBuf)> = Vec::new();
@@ -204,21 +211,17 @@ fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 
 			for path in dir {
 				let path = path.map_err(|_| "Error reading directory")?.path();
-
 				// path will be in the form of "inputs/size/id.in"
 				let mut current_out = out_path.clone().join(path.file_stem().unwrap());
-
 				current_out.set_extension("out");
-
 				paths.push((path, current_out));
 			}
-
 			Ok(paths)
 		}
 	}
 }
 
-// Validates and converts a string to a solver function
+/// Validates and converts a string to a solver function
 fn get_solver(solver: &str) -> Result<SolverFn, String> {
 	SOLVERS
 		.get(solver)

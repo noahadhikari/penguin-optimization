@@ -87,7 +87,7 @@ This `q`ueries the 170 leader board API to find which outputs have better/worse 
 ### `solve`
 USAGE:
 ```bash
-... solve -s <SOLVER> <PATHS>..
+... solve [OPTIONS] -s <SOLVER> <PATHS>..
 ```
 
 Where you can input any number of `PATH` arguments, each one in the form `<size>/<ids>`
@@ -95,12 +95,16 @@ Where you can input any number of `PATH` arguments, each one in the form `<size>
 - `<size>` can be `small`, `medium`, or `large`
 - `<ids>` can be a single id or a range of ids
 
+OPTIONS:
+- `-w` only runs the solver on provided inputs we are worse than
+
 #### EXAMPLES:
 
 `solve -s lp large` runs the `lp` solver on everything in the large folder
 
 `solve -s greedy small/1..220 medium/1` runs the `greedy` solver on ids 001 through 220 in the small folder and id 001 in the medium
 
+`solve -s benchmark small/1..40 -w` runs the `benchmark` solver on small ids 001 through 040 that we are worse (higher) than
 
 ## Directory Structure
 
