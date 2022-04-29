@@ -24,8 +24,8 @@ const SECS_PER_INPUT: u64 = 60;
 const CUTOFF_TIME: u32 = 60; // max time in seconds
 const ITERATIONS: u32 = 10000;
 
-// Randomized hillclimb parameters
-const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 64;
+// Randomized hillclimb parameters. How many iterations of hillclimb to do
+const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 2;
 // works best with 3 (any), 8 (small), 10 (medium), 14 (large).
 // brute-force is grid dimension: 30 (small), 50 (medium), 100 (large)
 const HILLCLIMB_RADIUS: u8 = 3;

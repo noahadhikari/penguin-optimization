@@ -1,11 +1,25 @@
-very hard for the RLP to solve even though they're meme inputs
+very hard for the RLP to solve even though they're meme inputs.
+place these into a different directory from outputs/large/ or delete them
 
 for large only
+042 done
+047 done
 051 done
+061 not optimal, but not bad
 066 done
+098 done
 101 done
 111 done
+114 done
 123 done
+144 done
+170 done
+177 done
+180 done
+181 done
 213 done
 
-i solved them by hand, so can ignore from the inputs now.
+lp does bad but still runs:
+149 done
+167 done
+179 done
