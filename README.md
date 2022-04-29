@@ -22,6 +22,31 @@
 
 # Rust Instructions
 
+*This replaces the dependencies and development*
+
+If on Ubuntu, install dependencies with:
+```bash
+./dependencies
+```
+following the prompt instructions and typing in password for sudo
+(might have to exit and reopen shell)
+TODO: source cargo env
+
+Then run the formatter + build in release mode with
+```bash
+make
+```
+
+Then install the `pengwin` binary with
+```bash
+sudo make install
+```
+
+Now you can run the solver with
+```bash
+pengwin <SUBCOMMAND> [OPTIONS]
+```
+
 ## Requirements
 
 It is recommended to use Linux or [WSL](https://docs.microsoft.com/en-us/learn/modules/get-started-with-windows-subsystem-for-linux/) since we use [coin-or cbc](https://www.coin-or.org/Cbc/), which is easier to set up on Linux.

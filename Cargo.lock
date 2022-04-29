@@ -759,7 +759,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "penguin-project"
+name = "pengwin"
 version = "0.1.0"
 dependencies = [
  "clap",
