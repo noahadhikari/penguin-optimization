@@ -27,7 +27,6 @@ pub enum InputType {
 }
 
 /// Prints out the inputs we have better/worse scores than
-#[tokio::main]
 pub async fn get_api_result(size: &InputType) {
 	let input_type: &str;
 	// { test_number: (our_score, leaderboard_score), ... }
@@ -163,13 +162,13 @@ pub fn input_size_from_string(input: &str) -> Result<InputType, String> {
 	}
 }
 
-// TODO: Change unwraps to ?
-pub async fn is_score_worse_than_leader(path: &PathBuf) -> bool {
+/// Return whether our score is worse (higher) than the current highest on the leaderboard
+pub async fn is_score_worse_than_leader(path: &PathBuf) -> Result<bool, String> {
 	let input_type = path.parent().unwrap().file_stem().unwrap().to_str().unwrap();
 	let test_num = path.file_stem().unwrap().to_str().unwrap().parse::<u8>().unwrap();
 
-	let leaderboard_score = get_best_leaderboard_score(test_num, input_type).await.unwrap();
-	let our_score = get_penalty_from_file(path.to_str().unwrap()).unwrap();
+	let leaderboard_score = get_best_leaderboard_score(test_num, input_type).await?;
+	let our_score = get_penalty_from_file(path.to_str().unwrap())?;
 
-	return round(leaderboard_score) > round(our_score);
+	Ok(round(leaderboard_score) < round(our_score))
 }

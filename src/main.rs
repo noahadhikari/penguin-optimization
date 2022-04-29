@@ -80,6 +80,7 @@ async fn main() {
 	let args = Args::parse();
 	
 	match &args.command {
+
 		// -- LIST --
 		Commands::List => {
 			println!("List of solvers:");
@@ -87,28 +88,30 @@ async fn main() {
 				println!("\t{}", name);
 			}
 		}
+
 		// -- API --
 		Commands::Api { size } => {
-			get_api_result(size);
+			get_api_result(size).await;
 		}
+		
 		// -- SOLVE --
 		Commands::Solve { solver, paths, worse } => {
 			// Prevent solving multiple identical inputs
 			let mut path_list: HashSet<&PathBuf> = HashSet::new();
 
-			// TODO: Make this parallel
 			// Run the solver on each input
 			for path_set in paths {
 				for (input, output) in path_set {
-					let is_worse = *worse && !is_score_worse_than_leader(output).await;
-					if path_list.contains(&input) || is_worse {
+					let is_worse = is_score_worse_than_leader(output).await.unwrap();
+					if path_list.contains(&input) || (*worse && !is_worse) {
 						continue;
 					}
 					path_list.insert(&input);
-					println!("{}", input.display());
+					println!("Solving input {}/{}", 
+						input.parent().unwrap().file_stem().unwrap().to_str().unwrap(), 
+						input.file_stem().unwrap().to_str().unwrap()
+					);
 
-
-					// let mut grid = Grid::from_file(input);
 					let mut grid = Grid::from_file(input.to_str().unwrap())
 						.expect(format!("Failed to load grid from {}", input.to_str().unwrap()).as_str());
 
@@ -135,7 +138,7 @@ fn check_id_range(id: u8) -> Result<bool, String> {
 	}
 }
 
-// Converts input string to a list of input and output paths
+/// Converts input string to a list of input and output paths
 fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 	// Assuming run from root directory
 	let mut paths: Vec<(PathBuf, PathBuf)> = Vec::new();
@@ -208,15 +211,11 @@ fn get_paths(input: &str) -> Result<Vec<(PathBuf, PathBuf)>, String> {
 
 			for path in dir {
 				let path = path.map_err(|_| "Error reading directory")?.path();
-
 				// path will be in the form of "inputs/size/id.in"
 				let mut current_out = out_path.clone().join(path.file_stem().unwrap());
-
 				current_out.set_extension("out");
-
 				paths.push((path, current_out));
 			}
-
 			Ok(paths)
 		}
 	}
