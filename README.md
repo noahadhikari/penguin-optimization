@@ -131,6 +131,8 @@ OPTIONS:
 
 `solve -s benchmark small/1..40 -w` runs the `benchmark` solver on small ids 001 through 040 that we are worse (higher) than
 
+**NOTE**: We used a combination of `rand_hillclimb` and `hillclimb` to generate most outputs, as well as tuning some by hand. As a result, your results may vary when trying to run our solver as it inherently relies on randomness to generate solutions.
+
 ## Directory Structure
 
 
