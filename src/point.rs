@@ -1,6 +1,6 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::cmp::Ordering;
 
 // Static preprocessed data for points within radii.
 lazy_static! {
