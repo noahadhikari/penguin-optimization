@@ -24,10 +24,12 @@ const SECS_PER_INPUT: u64 = 60;
 const CUTOFF_TIME: u32 = 60; // max time in seconds
 const ITERATIONS: u32 = 10000;
 
-// Randomized hillclimb parameters. How many iterations of hillclimb to do
-const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 2;
-// works best with 3 (any), 8 (small), 10 (medium), 14 (large).
-// brute-force is grid dimension: 30 (small), 50 (medium), 100 (large)
+// Randomized hillclimb parameters
+
+// How many iterations of hillclimb to do. When =0 then is threaded naive hillclimb.
+const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 0;
+// Radius of hillclimb. works best with 3 (any), 8 (small), 10 (medium), 14 (large).
+// brute-force is grid dimension * sqrt 2: 43 (small), 71 (medium), 142 (large)
 const HILLCLIMB_RADIUS: u8 = 3;
 
 // ------- Solver functions -------
@@ -196,7 +198,7 @@ pub fn hillclimb(grid: &mut Grid, output_path: &str) {
 	if new_penalty < old_penalty {
 		println!("Improved! {} -> {}", old_penalty, new_penalty);
 	} else {
-		println!("Hillclimb could not improve. {}", new_penalty);
+		println!("Hillclimb could not improve with radius {}. {}", HILLCLIMB_RADIUS, new_penalty);
 	}
 }
 
@@ -225,13 +227,13 @@ pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
 	let new_penalty = round(grid.penalty());
 	if new_penalty < old_penalty {
 		println!(
-			"{} Total_improvement {} -> {}",
+			"{}  {} -> {}",
 			"Improved!".green(),
 			old_penalty,
 			new_penalty
 		);
 	} else {
-		println!("Randomized hillclimb could not improve. {}", new_penalty);
+		println!("Randomized hillclimb could not improve in {} iterations with radius {}. {}", HILLCLIMB_ITERATIONS_PER_THREAD, HILLCLIMB_RADIUS, new_penalty);
 	}
 }
 

@@ -436,6 +436,9 @@ impl Grid {
 				_ => {
 					if let Ok(l) = line {
 						let vec: Vec<&str> = l.split_whitespace().collect();
+						if vec.len() == 0 || vec.get(0).unwrap().eq(&"#") {
+							continue;
+						}
 						let x = vec.get(0).unwrap().parse::<i32>().unwrap();
 						let y = vec.get(1).unwrap().parse::<i32>().unwrap();
 						towers.insert(Point::new(x, y));
