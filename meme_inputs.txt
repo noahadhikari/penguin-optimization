@@ -5,7 +5,7 @@ for large only
 042 done
 047 done
 051 done
-061 not optimal, but not bad
+061 not optimal, but not terrible
 066 done
 098 done
 101 done
@@ -20,6 +20,7 @@ for large only
 213 done
 
 lp does bad but still runs:
+010 not optimal, but not terrible
 149 done
 167 done
 179 done

@@ -1,5 +1,6 @@
 # Install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
 rustup toolchain install nightly
 rustup component add rustfmt --toolchain nightly
 # Things that require sudo

@@ -115,7 +115,7 @@ impl Grid {
 			let w_j = penalized.len() as f64;
 			penalty += (0.17 * w_j).exp();
 		}
-		170.0 * penalty
+		api::round(170.0 * penalty)
 	}
 
 	/// Returns whether the towers in this Grid cover all cities.
@@ -250,7 +250,9 @@ impl Grid {
 	pub fn output(&self) -> String {
 		let mut res = format!("# Penalty = {}\n", self.penalty());
 		res += &(self.towers.len().to_string() + "\n");
-		for (point, _) in self.towers.iter() {
+		let mut sorted_towers: Vec<_> = self.towers.keys().collect();
+		sorted_towers.sort();
+		for point in sorted_towers {
 			res += &(point.file_string() + "\n");
 		}
 		res
@@ -338,6 +340,31 @@ impl Grid {
 			}
 		}
 		Ok(g)
+	}
+
+	// Orders the points in the solution.
+	pub fn overwrite_with_sorted_solution(&self, output_path: &str) {
+		assert!(self.is_valid(), "Not a valid solution");
+		// Only overwrite if solution is better than what we currently have
+		if Path::new(output_path).is_file() {
+			let mut existing_penalty = 0.;
+			while existing_penalty == 0. {
+				existing_penalty = api::round(api::get_penalty_from_file(output_path).unwrap_or(0.));
+			}
+
+			if self.penalty() > existing_penalty {
+				return;
+			}
+		}
+
+		let data = self.output();
+		let mut f = OpenOptions::new()
+			.write(true)
+			.truncate(true)
+			.create(true)
+			.open(output_path)
+			.expect("Unable to open file");
+		f.write_all(data.as_bytes()).expect("Unable to write data");
 	}
 
 	// Write self to a file as a solution
@@ -436,6 +463,9 @@ impl Grid {
 				_ => {
 					if let Ok(l) = line {
 						let vec: Vec<&str> = l.split_whitespace().collect();
+						if vec.len() == 0 || vec.get(0).unwrap().eq(&"#") {
+							continue;
+						}
 						let x = vec.get(0).unwrap().parse::<i32>().unwrap();
 						let y = vec.get(1).unwrap().parse::<i32>().unwrap();
 						towers.insert(Point::new(x, y));
