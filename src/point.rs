@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::cmp::Ordering;
 
 // Static preprocessed data for points within radii.
 lazy_static! {
@@ -161,6 +162,28 @@ impl fmt::Debug for Point {
 impl fmt::Display for Point {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(f, "({}, {})", self.x, self.y)
+	}
+}
+
+impl PartialOrd for Point {
+	fn partial_cmp(&self, other: &Point) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
+}
+
+impl Ord for Point {
+	fn cmp(&self, other: &Point) -> Ordering {
+		if self.x > other.x {
+			return Ordering::Greater;
+		} else if self.x < other.x {
+			return Ordering::Less;
+		} else if self.y > other.y {
+			return Ordering::Greater;
+		} else if self.y < other.y {
+			return Ordering::Less;
+		} else {
+			return Ordering::Equal;
+		}
 	}
 }
 

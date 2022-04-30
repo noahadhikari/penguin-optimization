@@ -6,7 +6,6 @@ use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
-use crate::api::round;
 use crate::grid::Grid;
 use crate::point::Point;
 
@@ -30,7 +29,7 @@ const ITERATIONS: u32 = 10000;
 const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 0;
 // Radius of hillclimb. works best with 3 (any), 8 (small), 10 (medium), 14 (large).
 // brute-force is grid dimension * sqrt 2: 43 (small), 71 (medium), 142 (large)
-const HILLCLIMB_RADIUS: u8 = 3;
+const HILLCLIMB_RADIUS: u8 = 142;
 
 // ------- Solver functions -------
 
@@ -188,13 +187,13 @@ pub fn hillclimb(grid: &mut Grid, output_path: &str) {
 	for tower in initial_towers {
 		grid.add_tower(tower.x, tower.y);
 	}
-	let old_penalty = round(grid.penalty());
+	let old_penalty = grid.penalty();
 
 	if hillclimb_helper(grid, output_path, old_penalty) {
 		grid.remove_all_towers();
 		hillclimb(grid, output_path);
 	}
-	let new_penalty = round(grid.penalty());
+	let new_penalty = grid.penalty();
 	if new_penalty < old_penalty {
 		println!("Improved! {} -> {}", old_penalty, new_penalty);
 	} else {
@@ -210,7 +209,7 @@ pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
 	for tower in initial_towers {
 		grid.add_tower(tower.x, tower.y);
 	}
-	let old_penalty = round(grid.penalty());
+	let old_penalty = grid.penalty();
 	let mut grids: Vec<_> = vec![];
 	for _ in 0..(num_cpus::get()) {
 		grids.push(grid.clone());
@@ -224,7 +223,7 @@ pub fn rand_hillclimb_threaded(grid: &mut Grid, output_path: &str) {
 	for tower in new_towers {
 		grid.add_tower(tower.x, tower.y);
 	}
-	let new_penalty = round(grid.penalty());
+	let new_penalty = grid.penalty();
 	if new_penalty < old_penalty {
 		println!(
 			"{}  {} -> {}",
@@ -245,7 +244,7 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_
 	for i in 0..(iterations + 1) {
 		loop {
 			if !hillclimb_helper(grid, output_path, global_penalty) {
-				let pen = round(grid.penalty());
+				let pen = grid.penalty();
 				if pen < global_penalty {
 					println!("Improvement on iteration {}: {} -> {}", i, global_penalty, pen);
 					grid.write_solution(output_path);
@@ -299,11 +298,11 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> 
 
 			if grid.is_valid() {
 				let new_penalty = grid.penalty();
-				if round(new_penalty) < round(old_penalty) {
+				if new_penalty < old_penalty {
 					changed = true;
 					// println!("{} -> {}, Old: {}, New: {}", tower, adj_tower, old_penalty,
 					// new_penalty);
-					if round(new_penalty) < round(global_penalty) {
+					if new_penalty < global_penalty {
 						grid.write_solution(output_path);
 					}
 					break 'outer;
@@ -313,4 +312,13 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> 
 		}
 	}
 	changed
+}
+
+pub fn sort_and_read_penalty(grid: &mut Grid, output_path: &str) {
+	let towers = Grid::towers_from_file(output_path);
+	for tower in towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	println!("Penalty: {}", grid.penalty());
+	grid.overwrite_with_sorted_solution(output_path);
 }
