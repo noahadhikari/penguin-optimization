@@ -31,7 +31,11 @@ const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 0;
 // Radius of hillclimb. works best with 3 (any), 8 (small), 10 (medium), 14
 // (large). brute-force is grid dimension * sqrt 2: 43 (small), 71 (medium), 142
 // (large)
-const HILLCLIMB_RADIUS: u8 = 3;
+const HILLCLIMB_RADIUS: u8 = 10;
+
+// Simulated annealing parameters
+const SA_ITERATIONS: u32 = 1000;
+const SA_RADIUS: u8 = 43;
 
 // ------- Solver functions -------
 
