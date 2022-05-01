@@ -11,6 +11,7 @@ mod grid;
 mod lp;
 mod point;
 mod solvers;
+mod annealing;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};

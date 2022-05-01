@@ -4,12 +4,14 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::{fmt, io};
 
+use serde::{Serialize, Deserialize};
+
 use crate::api;
 use crate::lp::GridProblem;
 use crate::point::Point;
 
 // A Grid which we place towers and cities on.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Grid {
 	dimension:      u8,
 	service_radius: u8,
