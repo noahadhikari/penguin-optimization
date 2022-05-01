@@ -27,11 +27,15 @@ const ITERATIONS: u32 = 10000;
 
 // How many iterations of hillclimb to do. When =0 then is threaded naive
 // hillclimb.
-const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 0;
+const HILLCLIMB_ITERATIONS_PER_THREAD: usize = 10;
 // Radius of hillclimb. works best with 3 (any), 8 (small), 10 (medium), 14
 // (large). brute-force is grid dimension * sqrt 2: 43 (small), 71 (medium), 142
 // (large)
-const HILLCLIMB_RADIUS: u8 = 3;
+const HILLCLIMB_RADIUS: u8 = 43;
+
+// Simulated annealing parameters
+const SA_ITERATIONS: u32 = 1000;
+const SA_RADIUS: u8 = 43;
 
 // ------- Solver functions -------
 
@@ -261,21 +265,21 @@ fn rand_hillclimb(grid: &mut Grid, output_path: &str, iterations: usize, global_
 	}
 }
 
+fn adjacent_towers(g: &Grid, t: Point, r: u8) -> Vec<Point> {
+	// need to change to points_within_naive if want to use different r values.
+
+	let mut adjacent_towers: HashSet<Point> = match r {
+		3 | 8 | 10 | 14 => Point::points_within_radius(t, r, g.dimension()).unwrap().clone(),
+		_ => Point::points_within_naive(t, r, g.dimension()),
+	};
+	for (tower, _) in g.get_towers_ref() {
+		adjacent_towers.remove(tower);
+	}
+	adjacent_towers.into_iter().collect()
+}
+
 /// Runs hillclimb on this grid and returns whether any improvements were made.
 fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> bool {
-	fn adjacent_towers(g: &Grid, t: Point, r: u8) -> Vec<Point> {
-		// need to change to points_within_naive if want to use different r values.
-
-		let mut adjacent_towers: HashSet<Point> = match r {
-			3 | 8 | 10 | 14 => Point::points_within_radius(t, r, g.dimension()).unwrap().clone(),
-			_ => Point::points_within_naive(t, r, g.dimension()),
-		};
-		for (tower, _) in g.get_towers_ref() {
-			adjacent_towers.remove(tower);
-		}
-		adjacent_towers.into_iter().collect()
-	}
-
 	let old_penalty = grid.penalty();
 	let mut changed = false;
 	let old_towers = (*grid.get_towers_ref()).clone();
@@ -324,4 +328,71 @@ pub fn sort_and_read_penalty(grid: &mut Grid, output_path: &str) {
 	}
 	println!("Penalty: {}", grid.penalty());
 	grid.overwrite_with_sorted_solution(output_path);
+}
+
+pub fn simulated_annealing(old_grid: &mut Grid, output_path: &str) {
+	fn temperature(r: f64) -> f64 {
+		(-r.sqrt() + 1.0).powf(2.)
+	}
+	fn probability(from_penalty: f64, to_penalty: f64, temperature: f64) -> f64 {
+		if temperature <= 0.000001 {
+			0.
+		} else if from_penalty < to_penalty {
+			1.
+		} else {
+			(- (to_penalty - from_penalty) / temperature).exp()
+		}
+	}
+	let mut rng = thread_rng();
+	
+	old_grid.random_lp_solve(1, rng.gen_range(1..=u32::MAX));
+	let mut best_pen = f64::INFINITY;
+	let mut best_towers: HashSet<Point> = HashSet::new();
+	let mut new_grid = old_grid.clone();
+	for k in 0..SA_ITERATIONS {
+		let from_pen = old_grid.penalty();
+		if from_pen <= best_pen {
+			best_pen = from_pen;
+			best_towers.clear();
+			for (&tower, _) in old_grid.get_towers_ref() {
+				best_towers.insert(tower);
+			}
+		}
+		println!("Current penalty: {}", from_pen);
+		let t = temperature(1. - ((k + 1) as f64) / (SA_ITERATIONS as f64));
+		let curr_towers: Vec<_> = old_grid.get_towers_ref().keys().clone().collect();
+		let rand_tower = curr_towers[rng.gen_range(0..curr_towers.len())];
+		let mut possible_moves = vec![];
+		for adj_tower in adjacent_towers(&old_grid, *rand_tower, SA_RADIUS) {
+			new_grid.move_tower(*rand_tower, adj_tower);
+			if new_grid.is_valid() {
+				possible_moves.push(adj_tower);
+			}
+			new_grid.move_tower(adj_tower, *rand_tower);
+		}
+		if possible_moves.is_empty() {
+			if 0.1 > rng.gen() {
+				new_grid.random_lp_solve(1, rng.gen_range(1..=u32::MAX));
+			} else {
+				new_grid.remove_all_towers();
+				for tower in best_towers.clone() {
+					new_grid.add_tower(tower.x, tower.y);
+				}
+			}
+		} else {
+			let rand_move = possible_moves[rng.gen_range(0..possible_moves.len())];
+
+			new_grid.move_tower(*rand_tower, rand_move); // store the new state
+			let to_pen = old_grid.penalty();
+			if probability(from_pen, to_pen, t) < rng.gen() {
+				new_grid.move_tower(rand_move, *rand_tower); // undo the move if probability failed
+			}
+		}
+		old_grid.remove_all_towers();
+		for tower in new_grid.get_towers_ref().keys() {
+			old_grid.add_tower(tower.x, tower.y);
+		}
+	}
+	println!("Best: {}", best_pen);
+	old_grid.write_solution(output_path);	
 }
