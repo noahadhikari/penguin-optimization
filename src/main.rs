@@ -10,6 +10,7 @@ mod annealing;
 mod api;
 mod grid;
 mod lp;
+mod op_en;
 mod point;
 mod solvers;
 use std::collections::HashSet;
@@ -32,6 +33,7 @@ static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"hillclimb" => hillclimb,
 	"rand_hillclimb" => rand_hillclimb_threaded,
 	"annealing" => simulated_annealing,
+	"op_en" => op_en,
 };
 
 

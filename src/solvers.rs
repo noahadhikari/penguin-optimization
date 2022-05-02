@@ -9,6 +9,7 @@ use stopwatch::Stopwatch;
 use crate::annealing;
 use crate::api::round;
 use crate::grid::Grid;
+use crate::op_en::OpEnProblem;
 use crate::point::Point;
 
 
@@ -319,4 +320,17 @@ pub fn simulated_annealing(grid: &mut Grid, output_path: &str) {
 		println!("{}", e);
 		std::process::exit(1);
 	}
+}
+
+
+pub fn op_en(grid: &mut Grid, output_path: &str) {
+	let mut op_en = OpEnProblem::new(grid);
+
+	let towers = op_en.into_tower_solution();
+	for tower in towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+
+	println!("{}", grid);
+	println!("{}", grid.is_valid());
 }
