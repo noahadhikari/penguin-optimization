@@ -6,10 +6,10 @@ use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
-use crate::api::round;
+use crate::annealing;
+use crate::api::{round, get_penalty_from_file};
 use crate::grid::Grid;
 use crate::point::Point;
-use crate::annealing;
 
 
 // Greedy parameters
@@ -327,12 +327,7 @@ pub fn sa_threaded(grid: &mut Grid, output_path: &str) {
 	grids
 		.par_iter_mut()
 		.for_each(|g: &mut Grid| simulated_annealing(g, output_path));
-	let new_towers = Grid::towers_from_file(output_path);
-	grid.remove_all_towers();
-	for tower in new_towers {
-		grid.add_tower(tower.x, tower.y);
-	}
-	let new_penalty = round(grid.penalty());
+	let new_penalty = get_penalty_from_file(output_path).unwrap_or(0.);
 	if new_penalty < old_penalty {
 		println!(
 			"{} Total_improvement {} -> {}",
@@ -346,7 +341,7 @@ pub fn sa_threaded(grid: &mut Grid, output_path: &str) {
 }
 pub fn simulated_annealing(grid: &mut Grid, output_path: &str) {
 	if let Err(ref e) = annealing::run(grid, output_path) {
-			println!("{}", e);
-			std::process::exit(1);
+		println!("{}", e);
+		std::process::exit(1);
 	}
 }
