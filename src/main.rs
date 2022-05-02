@@ -11,6 +11,7 @@ mod grid;
 mod lp;
 mod point;
 mod solvers;
+mod annealing;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -31,6 +32,7 @@ static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"hillclimb" => hillclimb,
 	"rand_hillclimb" => rand_hillclimb_threaded,
 	"sort_and_read_penalty" => sort_and_read_penalty,
+	"annealing" => simulated_annealing,
 };
 
 
@@ -78,6 +80,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
+	// annealing::go();
+	// return;
+	
 	let args = Args::parse();
 
 	match &args.command {

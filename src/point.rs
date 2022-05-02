@@ -2,6 +2,8 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 
+use serde::{Serialize, Deserialize};
+
 // Static preprocessed data for points within radii.
 lazy_static! {
 	static ref PEN_S: HashMap<Point, HashSet<Point>> = preprocess::load("small", "penalty");
@@ -147,7 +149,7 @@ pub mod preprocess {
 
 
 /// Represents a lattice point on the grid. Has integer x-y coordinates.
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Point {
 	pub x: i32,
 	pub y: i32,
@@ -245,10 +247,7 @@ impl Point {
 		// println!("{}: {:?}", p, result);
 		match result {
 			Some(result) => Ok(result),
-			None => panic!(
-				"No preprocessing done for {} in r={}, dim={}.\nConsider using points_within_naive instead.",
-				p, r, dim
-			),
+			None => panic!("Didn't find preprocessed"),
 		}
 	}
 
