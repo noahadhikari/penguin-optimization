@@ -14,7 +14,7 @@ use crate::solvers;
 
 const INIT_TEMP: f64 = 150.0;
 const INIT_CULLING: f64 = 0.1;
-const MAX_ITERS: u64 = 1000;
+const MAX_ITERS: u64 = 10000;
 
 struct Penalty {
 	p:   f64,
