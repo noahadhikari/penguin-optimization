@@ -31,6 +31,7 @@ static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"rlp" => randomize_valid_solution_with_lp_threaded,
 	"hillclimb" => hillclimb,
 	"rand_hillclimb" => rand_hillclimb_threaded,
+	"annealing" => simulated_annealing,
 };
 
 
@@ -78,6 +79,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
+	// annealing::go();
+	// return;
+	
 	let args = Args::parse();
 
 	match &args.command {

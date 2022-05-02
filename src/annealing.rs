@@ -2,12 +2,11 @@ use argmin::prelude::*;
 use argmin::solver::simulatedannealing::{SATempFunc, SimulatedAnnealing};
 use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
+use std::io::Write;
 use std::sync::{Arc, Mutex};
 use crate::grid::Grid;
 use crate::point::Point;
-use std::default::Default;
-use argmin::solver::gradientdescent::SteepestDescent;
-use argmin::solver::linesearch::MoreThuenteLineSearch;
+use crate::api;
 
 const INIT_TEMP: f64 = 15.0;
 
@@ -39,7 +38,7 @@ impl ArgminOp for Penalty {
   // Return a valid neighbor of the current state
   fn modify(&self, param: &Grid, temp: f64) -> Result<Grid, Error> {
     
-    let percent = temp / (2.0 * INIT_TEMP);
+    // let percent = temp / (2.0 * INIT_TEMP);
 
     let mut grid = param.clone();
 
@@ -50,19 +49,24 @@ impl ArgminOp for Penalty {
     let mut towers: Vec<Point> = towers_hashmap.keys().map(|p| *p).collect();
     towers.shuffle(&mut rng);
     
-    let towers_to_move = (percent * (towers.len() as f64)) as usize;
+    // let towers_to_move = (percent * (towers.len() as f64)) as usize;
+		let towers_to_move = 1;
     let mut valid = false;
 
-		let i = 0;
+		let mut counter = 0;
     while !valid {
-			println!("Iteration {}", i);
+			grid = param.clone();
+			counter += 1;
+			println!("Iteration {}", counter);
       for i in 0..towers_to_move {
         // Get valid points to move the tower
         let tower = towers[i];
-        let candidate_points = Point::points_within_radius(tower, 5, grid.dimension()).unwrap();
+        let candidate_points = Point::points_within_naive(tower, 5, grid.dimension());
         let points: Vec<Point> = candidate_points.iter().map(|p| *p).collect();
         let point_to_move_to = points.choose(&mut rng).unwrap();
-        grid.move_tower(tower, *point_to_move_to);
+				if !grid.is_tower_present(*point_to_move_to) && grid.is_on_grid(point_to_move_to.x, point_to_move_to.y) {
+					grid.move_tower(tower, *point_to_move_to);
+				}
       }
       valid = grid.is_valid();
     }  
@@ -70,22 +74,22 @@ impl ArgminOp for Penalty {
   }
 }
 
-fn run() -> Result<(), Error> {
+pub fn run(grid: &mut Grid, output_path: &str) -> Result<(), Error> {
 
 	// Initial grid
-	let init_param: Grid = Grid::from_file("./inputs/large/123").unwrap();
+	let mut init_grid = grid.clone();
+	let sol_towers = Grid::towers_from_file(output_path);
+	for point in sol_towers.iter() {
+		init_grid.add_tower(point.x, point.y);
+	}
 	
 	// Cost function
-	let operator = Penalty::new(init_param.penalty());
+	let operator = Penalty::new(init_grid.penalty());
 
 	let rng = Xoshiro256PlusPlus::from_entropy();
 
 	let solver = SimulatedAnnealing::new(INIT_TEMP, rng)?
 		.temp_func(SATempFunc::Boltzmann)
-		// Optional: stop if there was no new best solution after n iterations
-		.stall_best(1000)
-		// Optional: stop if there was no accepted solution after n iterations
-		.stall_accepted(1000)
 		// Optional: Reanneal after n iterations (resets temperature to initial temperature)
 		.reannealing_fixed(1000)
 		// Optional: Reanneal after no accepted solution has been found for n iterations
@@ -93,51 +97,38 @@ fn run() -> Result<(), Error> {
 		// Optional: Start reannealing after no new best solution has been found for n iterations
 		.reannealing_best(800);
 	
-	let res = Executor::new(operator, solver, init_param);
+	let res = Executor::new(operator, solver, init_grid)
+		.add_observer(ArgminSlogLogger::term(), ObserverMode::Always)
+		.max_iters(10000)
+		.target_cost(0.0)
+		.run()?;
+	
+	// Wait a second (lets the logger flush everything before printing again)
+	std::thread::sleep(std::time::Duration::from_secs(1));
+
+	// Print result
+	println!("{}", res);
+	println!("---------------------------------------");
+	println!("{} -> {}", api::get_penalty_from_file(output_path).unwrap(), res.state.best_param.penalty());
+	println!("---------------------------------------");
+	write_log(output_path, api::get_penalty_from_file(output_path).unwrap(), res.state.best_param.penalty());
+	res.state.best_param.write_solution(output_path);
+	
 	Ok(())
 }
 
-
-// fn run() -> Result<(), Error> {
-// 	// Define bounds
-// 	// let lower_bound: Vec<f64> = vec![-5.0, -5.0];
-// 	// let upper_bound: Vec<f64> = vec![5.0, 5.0];
-
-// 	// Define cost function
-// 	// let operator = Rosenbrock::new(1.0, 100.0, lower_bound, upper_bound);
-
-// 	// Define initial parameter Grid
-// 	let init_param: Grid = Grid::from_file("./inputs/large/123").unwrap();
-
-// 	// Define initial temperature
-// 	let temp: f64 = 15.0;
-
-// 	// Seed RNG
-// 	let rng = Xoshiro256PlusPlus::from_entropy();
-
-// 	// Set up simulated annealing solver
-// 	let solver = SimulatedAnnealing::new(temp, rng)?
-// 		.temp_func(SATempFunc::Boltzmann)
-// 		// Optional: Stop if there's no best solution after n iterations
-// 		.stall_best(1000)
-// 		// Optional: Stop if there's no accepted solution after n iterations
-// 		.stall_accepted(1000)
-// 		// Optional: Reanneal after n iterations (resets temperature to initial temperature)
-// 		.reannealing_fixed(1000)
-// 		// Optional: Reanneal after no accepted solution has been found for n iterations
-// 		.reannealing_accepted(500)
-// 		// Optional: Start reannealing after no new best solution has been found for n iterations
-// 		.reannealing_best(800);
-
-// 	// Run solver
-// 	// let res = Executor::new(init_param, solver, init_param)
-// 	// 	.add_observer(ArgminSlogLogger::term(), ObserverMode::Always)
-// 	// 	.max_iters(10_000)
-// 	// 	.target_cost(0.0)
-// 	// 	.run()?;
-
-// 	// Wait a second (lets the logger flush everything before printing again)
-// 	std::thread::sleep(std::time::Duration::from_secs(1));
-
-// 	// println!("{}", res);
-// 	Ok(}
+fn write_log(id: &str, old_pen: f64, new_pen: f64) {
+	let mut file = std::fs::OpenOptions::new()
+		.append(true)
+		.create(true)
+		.open("log.txt")
+		.unwrap();
+	let mut log_string = String::new();
+	log_string.push_str(id);
+	log_string.push_str(": ");
+	log_string.push_str(&old_pen.to_string());
+	log_string.push_str(" -> ");
+	log_string.push_str(&new_pen.to_string());
+	log_string.push_str("\n");
+	file.write_all(log_string.as_bytes()).unwrap();
+}

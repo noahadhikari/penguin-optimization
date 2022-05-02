@@ -9,6 +9,7 @@ use stopwatch::Stopwatch;
 use crate::api::round;
 use crate::grid::Grid;
 use crate::point::Point;
+use crate::annealing;
 
 
 // Greedy parameters
@@ -311,4 +312,11 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> 
 		}
 	}
 	changed
+}
+
+pub fn simulated_annealing(grid: &mut Grid, output_path: &str) {
+	if let Err(ref e) = annealing::run(grid, output_path) {
+			println!("{}", e);
+			std::process::exit(1);
+	}
 }

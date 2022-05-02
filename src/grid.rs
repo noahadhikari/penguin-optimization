@@ -215,6 +215,11 @@ impl Grid {
 		}
 	}
 
+	/// Returns if a tower is present on the given point
+	pub fn is_tower_present(&self, p: Point) -> bool {
+		self.towers.contains_key(&p)
+	}	
+
 	/// Moves a tower from P = (x, y) to Q = (x', y').
 	/// Fails if tower at P does not exist or if tower at Q already exists.
 	pub fn move_tower(&mut self, p: Point, q: Point) {
@@ -346,8 +351,8 @@ impl Grid {
 	pub fn write_solution(&self, output_path: &str) {
 		assert!(self.is_valid(), "Not a valid solution");
 		// Only overwrite if solution is better than what we currently have
+		let mut existing_penalty = 0.;
 		if Path::new(output_path).is_file() {
-			let mut existing_penalty = 0.;
 			while existing_penalty == 0. {
 				existing_penalty = api::round(api::get_penalty_from_file(output_path).unwrap_or(0.));
 			}
@@ -356,7 +361,7 @@ impl Grid {
 				return;
 			}
 		}
-
+		
 		let data = self.output();
 		let mut f = OpenOptions::new()
 			.write(true)

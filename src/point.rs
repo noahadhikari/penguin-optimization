@@ -224,7 +224,7 @@ impl Point {
 		// println!("{}: {:?}", p, result);
 		match result {
 			Some(result) => Ok(result),
-			None => Ok(&Self::points_within_naive(p, r, dim)),
+			None => panic!("Didn't find preprocessed"),
 		}
 	}
 

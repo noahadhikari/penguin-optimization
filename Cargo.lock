@@ -38,7 +38,7 @@ dependencies = [
  "getrandom",
  "instant",
  "num 0.4.0",
- "num-complex 0.4.0",
+ "num-complex 0.4.1",
  "paste",
  "rand 0.8.5",
  "serde",
@@ -694,7 +694,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43db66d1170d347f9a065114077f7dccb00c1b9478c89384490a3425279a4606"
 dependencies = [
  "num-bigint 0.4.3",
- "num-complex 0.4.0",
+ "num-complex 0.4.1",
  "num-integer",
  "num-iter",
  "num-rational 0.4.0",
@@ -736,9 +736,9 @@ dependencies = [
 
 [[package]]
 name = "num-complex"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26873667bbbb7c5182d4a37c1add32cdf09f841af72da53318fdb81543c15085"
+checksum = "97fbc387afefefd5e9e39493299f3069e14a140dd34dc19b4c1c1a8fddb6a790"
 dependencies = [
  "num-traits",
 ]
@@ -1102,6 +1102,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
 dependencies = [
  "rand_core 0.6.3",
+ "serde",
 ]
 
 [[package]]
