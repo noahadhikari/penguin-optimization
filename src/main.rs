@@ -25,6 +25,7 @@ use solvers::*;
 // Define solver functions
 type SolverFn = fn(&mut Grid, &str);
 
+
 static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"benchmark" => benchmark_greedy,
 	"greedy" => greedy,

@@ -314,6 +314,7 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> 
 	changed
 }
 
+/// Anneal
 pub fn simulated_annealing(grid: &mut Grid, output_path: &str) {
 	if let Err(ref e) = annealing::run(grid, output_path) {
 		println!("{}", e);
