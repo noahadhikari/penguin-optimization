@@ -67,6 +67,7 @@ fn neighbor_one_tower(param: &Grid) -> Grid {
 	let mut valid = false;
 
 	// let mut counter = 0;
+	let fail_pt = Point::new(0, 0);
 	while !valid {
 		grid = param.clone();
 		// counter += 1;
@@ -76,7 +77,8 @@ fn neighbor_one_tower(param: &Grid) -> Grid {
 			let tower = towers[i];
 			let candidate_points = Point::points_within_naive(tower, 5, grid.dimension());
 			let points: Vec<Point> = candidate_points.iter().map(|p| *p).collect();
-			let point_to_move_to = points.choose(&mut rng).unwrap();
+
+			let point_to_move_to = points.choose(&mut rng).unwrap_or(&fail_pt);
 			if !grid.is_tower_present(*point_to_move_to) && grid.is_on_grid(point_to_move_to.x, point_to_move_to.y) {
 				grid.move_tower(tower, *point_to_move_to);
 			}
@@ -183,13 +185,13 @@ pub fn run(grid: &mut Grid, output_path: &str) -> Result<(), Error> {
 	println!("---------------------------------------");
 	println!(
 		"{} -> {}",
-		api::get_penalty_from_file(output_path).unwrap(),
+		api::get_penalty_from_file(output_path).unwrap_or(0.),
 		res.state.best_param.penalty()
 	);
 	println!("---------------------------------------");
 	write_log(
 		output_path,
-		api::get_penalty_from_file(output_path).unwrap(),
+		api::get_penalty_from_file(output_path).unwrap_or(0.),
 		res.state.best_param.penalty(),
 	);
 	res.state.best_param.write_solution(output_path);
@@ -203,7 +205,7 @@ fn write_log(id: &str, old_pen: f64, new_pen: f64) {
 		.append(true)
 		.create(true)
 		.open("log.txt")
-		.unwrap();
+		.unwrap_or_else(|e| println!("Could not open file: {}", e));
 	let mut log_string = String::new();
 	log_string.push_str(id);
 	log_string.push_str(": ");
