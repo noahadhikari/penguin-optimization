@@ -14,7 +14,7 @@ use crate::solvers;
 
 const INIT_TEMP: f64 = 150.0;
 const INIT_CULLING: f64 = 0.1;
-const MAX_ITERS: u64 = 100;
+const MAX_ITERS: u64 = 1000;
 
 struct Penalty {
 	p:   f64,
@@ -75,7 +75,7 @@ fn neighbor_one_tower(param: &Grid) -> Grid {
 		for i in 0..towers_to_move {
 			// Get valid points to move the tower
 			let tower = towers[i];
-			let candidate_points = Point::points_within_naive(tower, 5, grid.dimension());
+			let candidate_points = Point::points_within_radius(tower, 3, grid.dimension()).unwrap();
 			let points: Vec<Point> = candidate_points.iter().map(|p| *p).collect();
 
 			let point_to_move_to = points.choose(&mut rng).unwrap_or(&fail_pt);
@@ -201,11 +201,15 @@ pub fn run(grid: &mut Grid, output_path: &str) -> Result<(), Error> {
 
 /// Write the log to a file
 fn write_log(id: &str, old_pen: f64, new_pen: f64) {
-	let mut file = std::fs::OpenOptions::new()
+	let file = std::fs::OpenOptions::new()
 		.append(true)
 		.create(true)
-		.open("log.txt")
-		.unwrap_or_else(|e| println!("Could not open file: {}", e));
+		.open("log.txt");
+	let mut file = match file {
+		Ok(file) => file,
+		Err(_) => return,
+	};
+
 	let mut log_string = String::new();
 	log_string.push_str(id);
 	log_string.push_str(": ");
@@ -213,7 +217,8 @@ fn write_log(id: &str, old_pen: f64, new_pen: f64) {
 	log_string.push_str(" -> ");
 	log_string.push_str(&api::round(new_pen).to_string());
 	log_string.push_str("\n");
-	file.write_all(log_string.as_bytes()).unwrap_or_else(|e| {
-		println!("Could not write to log file: {}", e);
-	});
+	match file.write_all(log_string.as_bytes()) {
+		Ok(_) => (),
+		Err(_) => (),
+	};
 }
