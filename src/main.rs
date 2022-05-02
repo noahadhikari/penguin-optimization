@@ -31,7 +31,7 @@ static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"rlp" => randomize_valid_solution_with_lp_threaded,
 	"hillclimb" => hillclimb,
 	"rand_hillclimb" => rand_hillclimb_threaded,
-	"annealing" => simulated_annealing,
+	"annealing" => sa_threaded,
 };
 
 

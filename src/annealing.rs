@@ -61,7 +61,7 @@ impl ArgminOp for Penalty {
       for i in 0..towers_to_move {
         // Get valid points to move the tower
         let tower = towers[i];
-        let candidate_points = Point::points_within_naive(tower, 5, grid.dimension());
+        let candidate_points = Point::points_within_radius(tower, 3, grid.dimension()).unwrap();
         let points: Vec<Point> = candidate_points.iter().map(|p| *p).collect();
         let point_to_move_to = points.choose(&mut rng).unwrap();
 				if !grid.is_tower_present(*point_to_move_to) && grid.is_on_grid(point_to_move_to.x, point_to_move_to.y) {
@@ -69,19 +69,28 @@ impl ArgminOp for Penalty {
 				}
       }
       valid = grid.is_valid();
+		  
     }  
-    Ok(grid)
+	let clone_towers = grid.get_towers_ref();
+	let mut ret_grid = grid.clone();
+	for (t, _) in clone_towers {
+		ret_grid.remove_tower(t.x, t.y);
+		if !ret_grid.is_valid() {
+			ret_grid.add_tower(t.x, t.y);
+		}
+	}
+    Ok(ret_grid)
   }
 }
 
 pub fn run(grid: &mut Grid, output_path: &str) -> Result<(), Error> {
 
 	// Initial grid
-	let mut init_grid = grid.clone();
-	let sol_towers = Grid::towers_from_file(output_path);
-	for point in sol_towers.iter() {
-		init_grid.add_tower(point.x, point.y);
-	}
+	let init_grid = grid.clone();
+	// let sol_towers = Grid::towers_from_file(output_path);
+	// for point in sol_towers.iter() {
+	// 	init_grid.add_tower(point.x, point.y);
+	// }
 	
 	// Cost function
 	let operator = Penalty::new(init_grid.penalty());
@@ -99,7 +108,7 @@ pub fn run(grid: &mut Grid, output_path: &str) -> Result<(), Error> {
 	
 	let res = Executor::new(operator, solver, init_grid)
 		.add_observer(ArgminSlogLogger::term(), ObserverMode::Always)
-		.max_iters(10000)
+		.max_iters(1000)
 		.target_cost(0.0)
 		.run()?;
 	

@@ -314,6 +314,36 @@ fn hillclimb_helper(grid: &mut Grid, output_path: &str, global_penalty: f64) -> 
 	changed
 }
 
+pub fn sa_threaded(grid: &mut Grid, output_path: &str) {
+	let initial_towers = Grid::towers_from_file(output_path);
+	for tower in initial_towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	let old_penalty = round(grid.penalty());
+	let mut grids: Vec<_> = vec![];
+	for _ in 0..(num_cpus::get()) {
+		grids.push(grid.clone());
+	}
+	grids
+		.par_iter_mut()
+		.for_each(|g: &mut Grid| simulated_annealing(g, output_path));
+	let new_towers = Grid::towers_from_file(output_path);
+	grid.remove_all_towers();
+	for tower in new_towers {
+		grid.add_tower(tower.x, tower.y);
+	}
+	let new_penalty = round(grid.penalty());
+	if new_penalty < old_penalty {
+		println!(
+			"{} Total_improvement {} -> {}",
+			"Improved!".green(),
+			old_penalty,
+			new_penalty
+		);
+	} else {
+		println!("Randomized hillclimb could not improve. {}", new_penalty);
+	}
+}
 pub fn simulated_annealing(grid: &mut Grid, output_path: &str) {
 	if let Err(ref e) = annealing::run(grid, output_path) {
 			println!("{}", e);
