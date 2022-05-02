@@ -14,7 +14,7 @@ use crate::solvers;
 
 const INIT_TEMP: f64 = 150.0;
 const INIT_CULLING: f64 = 0.1;
-const MAX_ITERS: u64 = 100;
+const MAX_ITERS: u64 = 1000;
 
 struct Penalty {
 	p:   f64,
@@ -43,8 +43,9 @@ impl ArgminOp for Penalty {
 
 	// Return a valid neighbor of the current state
 	fn modify(&self, param: &Grid, temp: f64) -> Result<Grid, Error> {
-		Ok(neighbor_one_tower(param))
+		// Ok(neighbor_one_tower(param))
 		// Ok(neighbor_temp_towers(param, temp))
+		Ok(neighbor_remove_towers(param))
 	}
 }
 
@@ -131,6 +132,20 @@ fn neighbor_temp_towers(param: &Grid, temp: f64) -> Grid {
 	grid
 }
 
+// Return a valid neighbor of the current state with the redundant towers removed
+fn neighbor_remove_towers(param: &Grid) -> Grid {
+    
+	let grid = neighbor_one_tower(param);
+let clone_towers = grid.get_towers_ref();
+let mut ret_grid = grid.clone();
+for (t, _) in clone_towers {
+	ret_grid.remove_tower(t.x, t.y);
+	if !ret_grid.is_valid() {
+		ret_grid.add_tower(t.x, t.y);
+	}
+}
+	ret_grid
+}
 
 /// Run the simulated annealing algorithm
 pub fn run(grid: &mut Grid, output_path: &str) -> Result<(), Error> {
