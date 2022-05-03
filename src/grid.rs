@@ -4,12 +4,14 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::{fmt, io};
 
+use serde::{Deserialize, Serialize};
+
 use crate::api;
 use crate::lp::GridProblem;
 use crate::point::Point;
 
 // A Grid which we place towers and cities on.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Grid {
 	dimension:      u8,
 	service_radius: u8,
@@ -213,6 +215,27 @@ impl Grid {
 		}
 	}
 
+	/// Returns if a tower is present on the given point
+	pub fn is_tower_present(&self, p: Point) -> bool {
+		self.towers.contains_key(&p)
+	}
+
+	/// Returns a set of uncovered cities.
+	pub fn get_uncovered_cities(&self) -> HashSet<Point> {
+		let mut uncovered = HashSet::new();
+		for (c, ts) in self.cities.iter() {
+			if ts.len() == 0 {
+				uncovered.insert(*c);
+			}
+		}
+		uncovered
+	}
+
+	/// Returns if a city is not covered by any tower.
+	pub fn is_city_uncovered(&self, p: Point) -> bool {
+		self.cities.get(&p).unwrap().len() == 0
+	}
+
 	/// Moves a tower from P = (x, y) to Q = (x', y').
 	/// Fails if tower at P does not exist or if tower at Q already exists.
 	pub fn move_tower(&mut self, p: Point, q: Point) {
@@ -371,8 +394,8 @@ impl Grid {
 	pub fn write_solution(&self, output_path: &str) {
 		assert!(self.is_valid(), "Not a valid solution");
 		// Only overwrite if solution is better than what we currently have
+		let mut existing_penalty = 0.;
 		if Path::new(output_path).is_file() {
-			let mut existing_penalty = 0.;
 			while existing_penalty == 0. {
 				existing_penalty = api::round(api::get_penalty_from_file(output_path).unwrap_or(0.));
 			}

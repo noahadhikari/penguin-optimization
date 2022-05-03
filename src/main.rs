@@ -6,6 +6,7 @@
 extern crate lazy_static;
 extern crate num_cpus;
 
+mod annealing;
 mod api;
 mod grid;
 mod lp;
@@ -24,6 +25,7 @@ use solvers::*;
 // Define solver functions
 type SolverFn = fn(&mut Grid, &str);
 
+
 static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"benchmark" => benchmark_greedy,
 	"greedy" => greedy,
@@ -31,6 +33,7 @@ static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"hillclimb" => hillclimb,
 	"rand_hillclimb" => rand_hillclimb_threaded,
 	"sort_and_read_penalty" => sort_and_read_penalty,
+	"annealing" => simulated_annealing,
 };
 
 
@@ -78,6 +81,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
+	// annealing::go();
+	// return;
+
 	let args = Args::parse();
 
 	match &args.command {
