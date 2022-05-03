@@ -6,12 +6,12 @@
 extern crate lazy_static;
 extern crate num_cpus;
 
+mod annealing;
 mod api;
 mod grid;
 mod lp;
 mod point;
 mod solvers;
-mod annealing;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -24,6 +24,7 @@ use solvers::*;
 
 // Define solver functions
 type SolverFn = fn(&mut Grid, &str);
+
 
 static SOLVERS: phf::Map<&'static str, SolverFn> = phf_map! {
 	"benchmark" => benchmark_greedy,
@@ -82,7 +83,7 @@ enum Commands {
 async fn main() {
 	// annealing::go();
 	// return;
-	
+
 	let args = Args::parse();
 
 	match &args.command {

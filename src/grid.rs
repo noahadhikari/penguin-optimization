@@ -4,7 +4,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::{fmt, io};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::api;
 use crate::lp::GridProblem;
@@ -218,7 +218,23 @@ impl Grid {
 	/// Returns if a tower is present on the given point
 	pub fn is_tower_present(&self, p: Point) -> bool {
 		self.towers.contains_key(&p)
-	}	
+	}
+
+	/// Returns a set of uncovered cities.
+	pub fn get_uncovered_cities(&self) -> HashSet<Point> {
+		let mut uncovered = HashSet::new();
+		for (c, ts) in self.cities.iter() {
+			if ts.len() == 0 {
+				uncovered.insert(*c);
+			}
+		}
+		uncovered
+	}
+
+	/// Returns if a city is not covered by any tower.
+	pub fn is_city_uncovered(&self, p: Point) -> bool {
+		self.cities.get(&p).unwrap().len() == 0
+	}
 
 	/// Moves a tower from P = (x, y) to Q = (x', y').
 	/// Fails if tower at P does not exist or if tower at Q already exists.
@@ -388,7 +404,7 @@ impl Grid {
 				return;
 			}
 		}
-		
+
 		let data = self.output();
 		let mut f = OpenOptions::new()
 			.write(true)

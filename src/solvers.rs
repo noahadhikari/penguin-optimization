@@ -6,9 +6,9 @@ use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use stopwatch::Stopwatch;
 
+use crate::annealing;
 use crate::grid::Grid;
 use crate::point::Point;
-use crate::annealing;
 
 
 // Greedy parameters
@@ -330,9 +330,11 @@ pub fn sort_and_read_penalty(grid: &mut Grid, output_path: &str) {
 	println!("Penalty: {}", grid.penalty());
 	grid.overwrite_with_sorted_solution(output_path);
 }
+
+/// Anneal
 pub fn simulated_annealing(grid: &mut Grid, output_path: &str) {
 	if let Err(ref e) = annealing::run(grid, output_path) {
-			println!("{}", e);
-			std::process::exit(1);
+		println!("{}", e);
+		std::process::exit(1);
 	}
 }

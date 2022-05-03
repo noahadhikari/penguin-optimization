@@ -157,13 +157,13 @@ cargo +nightly fmt
 In addition to the above, we used the following crates/libraries:
 | | | | 
 |-|-|-|
-|`good_lp`| [Github](https://github.com/rust-or/good_lp) | [Documentation](https://docs.rs/good_lp/1.3.2/good_lp/) |
+|`good_lp`| [Github](https://github.com/rust-or/good_lp) | [Docs](https://docs.rs/good_lp/1.3.2/good_lp/) |
 |`clap`| [Derive Doc](https://github.com/clap-rs/clap/blob/v3.1.12/examples/derive_ref/README.md) | [Derive Tutorial](https://github.com/clap-rs/clap/blob/v3.1.12/examples/tutorial_derive/README.md#validated-values) |
 |`pfh` | [Documentation](https://docs.rs/phf/0.10.1/phf/) ||
 |`rustfmt-check`| [Github](https://github.com/mbrobbel/rustfmt-check) | [Actions Marketplace](https://github.com/marketplace/actions/rust-rustfmt-check) |
-`argmin` (anneal) | [Site](http://argmin-rs.org/) | [Docs](https://argmin-rs.github.io/argmin/argmin/solver/simulatedannealing/struct.SimulatedAnnealing.html) |
 |`rustfmt` | [Github](https://github.com/rust-lang/rustfmt) | [Toml Docs](https://rust-lang.github.io/rustfmt) |
-
+|`argmin`| [Github](https://github.com/argmin-rs/argmin) | [Docs](https://docs.rs/argmin/latest/argmin/) |
+|`rayon`| [Github](https://github.com/rayon-rs/rayon) | [Docs](https://docs.rs/rayon/latest/rayon/) |
 
 #
 # Python Instructions
