@@ -20,4 +20,4 @@ Then, we noticed that there may be easy improvement within the LP that we hadn't
 
 ### What computational resources did you use? (e.g. AWS, instructional machines, etc.)
 
-Most of our inputs were ran on our personal computers. However, we did create a free tier AWS account with a t2.micro EC2 instance to run the simulated annealing overnight. AWS free tier provides 750 hours per month, and we used ~120, keeping us well in the free tier range.
+Most of our inputs were ran on our personal computers. However, we did create a free tier AWS account with a t2.micro EC2 instance to run the simulated annealing overnight. AWS free tier provides 750 hours per month, and we used ~120, keeping us well within the free tier range.
