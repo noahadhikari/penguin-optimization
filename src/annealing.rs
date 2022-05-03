@@ -7,10 +7,9 @@ use argmin::solver::simulatedannealing::{SATempFunc, SimulatedAnnealing};
 use rand::prelude::*;
 use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::api;
 use crate::grid::Grid;
 use crate::point::Point;
-use crate::solvers;
+use crate::{api, solvers};
 
 const INIT_TEMP: f64 = 150.0;
 const INIT_CULLING: f64 = 0.1;
@@ -49,13 +48,13 @@ impl ArgminOp for Penalty {
 	}
 }
 
-/* Neigboring Functions */
+// Neigboring Functions
 
 /// Returns a neighbor of the given grid by moving one random tower
 /// to a random valid location
 fn neighbor_one_tower(param: &Grid) -> Grid {
 	let mut rng = Xoshiro256PlusPlus::from_entropy();
-	
+
 	let mut grid = param.clone();
 
 	// Returns random value from a hashmap
@@ -86,7 +85,7 @@ fn neighbor_one_tower(param: &Grid) -> Grid {
 	grid
 }
 
-/// Returns a neighbor of the given grid by moving a random number of 
+/// Returns a neighbor of the given grid by moving a random number of
 /// random towers to a random valid location (functions of temp)
 fn neighbor_temp_towers(param: &Grid, temp: f64) -> Grid {
 	let mut rng = Xoshiro256PlusPlus::from_entropy();
@@ -132,18 +131,18 @@ fn neighbor_temp_towers(param: &Grid, temp: f64) -> Grid {
 	grid
 }
 
-// Return a valid neighbor of the current state with the redundant towers removed
+// Return a valid neighbor of the current state with the redundant towers
+// removed
 fn neighbor_remove_towers(param: &Grid) -> Grid {
-    
 	let grid = neighbor_one_tower(param);
-let clone_towers = grid.get_towers_ref();
-let mut ret_grid = grid.clone();
-for (t, _) in clone_towers {
-	ret_grid.remove_tower(t.x, t.y);
-	if !ret_grid.is_valid() {
-		ret_grid.add_tower(t.x, t.y);
+	let clone_towers = grid.get_towers_ref();
+	let mut ret_grid = grid.clone();
+	for (t, _) in clone_towers {
+		ret_grid.remove_tower(t.x, t.y);
+		if !ret_grid.is_valid() {
+			ret_grid.add_tower(t.x, t.y);
+		}
 	}
-}
 	ret_grid
 }
 
