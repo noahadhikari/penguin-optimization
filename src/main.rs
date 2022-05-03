@@ -108,7 +108,10 @@ async fn main() {
 			// Run the solver on each input
 			for path_set in paths {
 				for (input, output) in path_set {
-					let is_worse = is_score_worse_than_leader(output).await.unwrap();
+					let mut is_worse = false;
+					if *worse {
+						is_worse = is_score_worse_than_leader(output).await.unwrap();
+					}
 					if path_list.contains(&input) || (*worse && !is_worse) {
 						continue;
 					}
