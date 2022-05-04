@@ -17,4 +17,4 @@ We also ran some naive greedy and improved greedy algorithms, considering the le
 
 ### What computational resources did you use? (e.g. AWS, instructional machines, etc.)
 
-Most of our inputs were ran on our personal computers. However, we did create a free tier AWS account with a t2.micro EC2 instance to run the simulated annealing overnight. AWS free tier provides 750 hours per month, and we used ~120, keeping us well within the free tier range. We did not really use the instructional machines.
+Most of our inputs were ran on our personal computers. However, we did create a free tier AWS account with a t2.micro EC2 instance to run the simulated annealing overnight. AWS free tier provides 750 hours per month, and we used ~120, keeping us well within the free tier range. We also used a Digital Ocean account on the free credits for about a day. We did not really use the instructional machines.
