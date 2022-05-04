@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 from typing import Optional, TypeVar
 
-from distance import Distance
-import parse
+from ppp.distance import Distance
+import ppp.parse
 
 T = TypeVar("T")
 
@@ -58,6 +58,19 @@ class Point:
         False
         """
         return Distance((self.x - second.x) ** 2 + (self.y - second.y) ** 2)
+    
+    def points_within_radius(self: Point, radius: int, dim: int) -> list:
+        """Returns a list of Points that are within the given radius of the
+        given point that are positive and within the bounds of the grid.
+        """
+        return [
+            Point(x, y)
+            for x in range(self.x - radius, self.x + radius + 1)
+            for y in range(self.y - radius, self.y + radius + 1)
+            if (x >= 0 and y >= 0 and
+                x < dim and y < dim and
+                Point(x, y).distance_obj(self) <= radius)
+        ]
 
     def replace(self, *, x: Optional[int] = None, y: Optional[int] = None) -> Point:
         """Constructs a new Point with the parameters passed replaced.

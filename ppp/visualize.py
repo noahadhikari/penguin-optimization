@@ -13,9 +13,9 @@ class VisualizationConfig:
     city_color: str = "rgb(0, 0, 0)"
     tower_color: str = "rgb(0, 0, 255)"
     coverage_color: str = "rgb(255, 0, 0)"
-    coverage_opacity: float = 0.4
+    coverage_opacity: float = 0.2
     penalty_color: str = "rgb(0, 255, 0)"
-    penalty_opacity: float = 0.1
+    penalty_opacity: float = 0.2
 
 
 def instance_file(args):

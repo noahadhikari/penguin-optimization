@@ -13,6 +13,8 @@ from instance import Instance
 from solution import Solution
 from file_wrappers import StdinFileWrapper, StdoutFileWrapper
 
+from minlp import solve_minlp
+
 
 def solve_naive(instance: Instance) -> Solution:
     return Solution(
@@ -22,7 +24,8 @@ def solve_naive(instance: Instance) -> Solution:
 
 
 SOLVERS: Dict[str, Callable[[Instance], Solution]] = {
-    "naive": solve_naive
+    "naive": solve_naive,
+    "minlp": solve_minlp
 }
 
 

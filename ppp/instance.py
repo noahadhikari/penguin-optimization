@@ -3,9 +3,9 @@ from __future__ import annotations
 import dataclasses
 from typing import Iterable, Iterator, List, TYPE_CHECKING
 
-import parse
-from point import Point
-from svg import SVGGraphic
+import ppp.parse as parse
+from ppp.point import Point
+from ppp.svg import SVGGraphic
 
 if TYPE_CHECKING:
     from visualize import VisualizationConfig
