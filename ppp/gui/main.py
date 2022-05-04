@@ -18,9 +18,9 @@ def main(instance: Instance, solution: Solution, output: Path):
 
 def start(args):
     input = args.input.split("/")
-    input_file = "inputs/" + input[0] + "/" + input[1].zfill(3) + ".in"
-    solution_file = "outputs/" + input[0] + "/" + input[1].zfill(3) + ".out"
-    output_file = "edited/" + input[0] + "/" + input[1].zfill(3) + ".out"
+    input_file = Path("inputs").joinpath(input[0], input[1].zfill(3) + ".in")
+    solution_file = Path("outputs").joinpath(input[0], input[1].zfill(3) + ".out")
+    output_file = Path("edited").joinpath(input[0], input[1].zfill(3) + ".out")
 
     with Path(input_file).open("r") as f:
         instance = Instance.parse(f.readlines())

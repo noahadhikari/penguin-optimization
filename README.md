@@ -11,6 +11,7 @@
   - [Directory Structure](#directory-structure)
   - [Development](#development)
   - [Documentation](#documentation)
+- [Manual Labor](#manual-labor)
 - [Python Instructions](#python-instructions)
   - [Requirements](#requirements-1)
   - [Usage](#usage-1)
@@ -165,7 +166,30 @@ In addition to the above, we used the following crates/libraries:
 |`argmin`| [Github](https://github.com/argmin-rs/argmin) | [Docs](https://docs.rs/argmin/latest/argmin/) |
 |`rayon`| [Github](https://github.com/rayon-rs/rayon) | [Docs](https://docs.rs/rayon/latest/rayon/) |
 
-#
+# Manual Labor 
+
+First install poetry and if prompted add the directory to the path.
+```bash
+sudo apt install python3-tk python3-pip
+pip install poetry
+# add given path to bashrc
+echo "export PATH='/home/<>/.local/bin:$PATH'" > .bashrc
+source .bashrc
+```
+
+Then in the project root
+```bash
+poetry install
+poetry run gui <INPUT>
+```
+Where input is in the form `small/3`
+
+This saves the current solution (if it has one) to `edited/small/003.out` and further edits are saved there
+
+**NOTE: ADDING DOES NOT WORK DO NOT TRY IT UNLESS NOT ZOOMED**
+
+
+
 # Python Instructions
 
 ## Requirements

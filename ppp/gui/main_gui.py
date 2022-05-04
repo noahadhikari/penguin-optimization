@@ -47,7 +47,7 @@ class InfoFrame(tk.Frame):
             text=f"Cost: {cost:.2f}",
         )
 
-    def set_selected_tower(self, tower: Point | None):
+    def set_selected_tower(self, tower: Point):
         if tower is None:
             self.lbl_selected.pack_forget()
             self.btn_delete.config(state=tk.DISABLED)
@@ -80,7 +80,7 @@ class MainCanvas(tk.Canvas):
 
         self.towers = dict((i,j) for i,j in enumerate(solution.towers))  
 
-        self.selected_tower_id: int | None = None
+        self.selected_tower_id: int  = None
         self.adding_tower = False
 
         self.init_grid()
